@@ -22,6 +22,7 @@ h1,h2,h3,h4{font-family:'Poppins',system-ui,sans-serif;margin:0 0 .4em;color:var
 p{line-height:1.65;margin:.3em 0 .9em;}
 ul,ol{line-height:1.7;padding-left:1.3em;}
 button{font-family:inherit;cursor:pointer;}
+button:disabled{cursor:not-allowed;opacity:.55;}
 img{max-width:100%;display:block;}
 .hidden{display:none !important;}
 a{color:var(--blue);}
@@ -118,6 +119,12 @@ main{flex:1;max-width:980px;margin:0 auto;width:100%;padding:22px 16px 60px;}
 .subtabs button.active .n{color:var(--yellow);}
 .matBlock{display:none;}
 .matBlock.active{display:block;}
+.subtabs button.locked, nav.mainnav button.locked{opacity:.5;cursor:not-allowed;}
+.subtabs button.locked:hover{color:var(--navy);}
+.stageGate{background:#FFF9EC;border:1.5px dashed var(--yellow-dark);border-radius:10px;
+  padding:14px 16px;margin-top:18px;text-align:center;}
+.stageGate p{margin:0 0 10px;font-size:.82rem;color:var(--muted);}
+.stageGate .doneMsg{color:var(--green);font-weight:700;font-size:.85rem;margin:0;}
 .exampleBox{background:#F6FAF7;border:1.5px solid #CFE9D7;border-left:4px solid var(--green);
   border-radius:10px;padding:14px 16px;margin:12px 0;font-size:.88rem;}
 .exampleBox b{color:var(--green);}
@@ -325,7 +332,9 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
     <!-- LATIHAN -->
     <section class="page" id="page-latihan">
       <div class="pageHead"><div class="eyebrow">ASAH KEMAMPUAN</div><h2>10 Soal Latihan</h2></div>
-      <div class="card"><p style="font-size:.85rem;margin:0;">Kerjakan lalu tekan <b>Cek Jawaban</b> pada tiap soal untuk melihat kunci &amp; pembahasan.</p></div>
+      <div class="card"><p style="font-size:.85rem;margin:0;">Kerjakan lalu tekan <b>Cek Jawaban</b> pada tiap soal untuk melihat kunci &amp; pembahasan.</p>
+        <p style="font-size:.8rem;margin:8px 0 0;color:var(--muted);" id="latihanProgressLabel">Progres: 0/10 soal sudah dicek.</p>
+        <p style="font-size:.78rem;margin:4px 0 0;color:var(--muted);">🔒 Menu Evaluasi terbuka setelah semua soal di halaman ini sudah kamu cek jawabannya.</p></div>
       <div class="card" id="latihanContent"></div>
     </section>
 
@@ -681,6 +690,14 @@ function enterApp(){
   loadKuisScores();
   if(typeof renderKuisHome==="function")renderKuisHome();
   if(typeof updateEvalIntro==="function"){updateEvalIntro();renderEval();}
+  // muat ulang progres tahapan milik siswa ini (nama+kelas), lalu render ulang semua gate
+  if(typeof loadMateriRead==="function"){
+    loadMateriRead();loadProgress();loadLatihanChecked();
+    curMateriIdx=0;renderSubtabs();showMateri(0);
+    renderRingkasanPage();renderProyekPage();
+    updateLatihanProgressLabel();
+    updateNavLocks();
+  }
   setTimeout(()=>showProtectToast("🔒 Konten ini dilindungi. Dilarang menyalin, memfoto, atau mengambil tangkapan layar tanpa izin guru mapel."),600);
   goPage("beranda");
 }
@@ -757,7 +774,14 @@ window.addEventListener("focus",()=>{document.getElementById("privacyBlur").styl
 
 /* ================= NAV ================= */
 document.querySelectorAll("nav.mainnav button").forEach(b=>{
-  b.addEventListener("click",()=>{goPage(b.dataset.page);document.getElementById("mainnav").classList.remove("open");});
+  b.addEventListener("click",()=>{
+    const p=b.dataset.page;
+    if(typeof pageUnlocked==="function"&&!pageUnlocked(p)){
+      showProtectToast("🔒 "+(PAGE_REQUIREMENT[p]?PAGE_REQUIREMENT[p].msg:"Selesaikan tahapan sebelumnya terlebih dahulu."));
+      return;
+    }
+    goPage(p);document.getElementById("mainnav").classList.remove("open");
+  });
 });
 document.getElementById("menuToggle").addEventListener("click",()=>{
   document.getElementById("mainnav").classList.toggle("open");
@@ -769,25 +793,168 @@ function goPage(p){
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
+/* ================= PROTEKSI TAHAPAN (SEMUA MENU BERURUTAN) =================
+   Aturan: setiap menu utama baru terbuka setelah tahap sebelumnya benar-benar
+   dituntaskan (materi dibaca penuh, ringkasan & proyek ditandai selesai,
+   kuis tuntas sampai level terakhir, latihan dicek semua). Semua status
+   disimpan per-siswa (nama+kelas) di localStorage perangkat siswa, sehingga
+   TIDAK mengubah/menyentuh link/tautan yang sudah dibagikan ke siswa. */
+const KUIS_PASS=3; // skor minimal dari 5 untuk tuntas & membuka level/tahap berikutnya
+
+let materiRead=[];         // status baca penuh tiap sub-materi (array boolean per index)
+let progress={};           // status ringkasan & proyek: {ringkasanDone:bool, proyekDone:bool}
+let latihanChecked=[];     // index soal Latihan yang sudah ditekan "Cek Jawaban"
+
+function loadMateriRead(){try{materiRead=JSON.parse(localStorage.getItem("anekdot_materiread_"+userSlug())||"[]");}catch(e){materiRead=[];}}
+function saveMateriRead(){try{localStorage.setItem("anekdot_materiread_"+userSlug(),JSON.stringify(materiRead));}catch(e){}}
+function loadProgress(){try{progress=JSON.parse(localStorage.getItem("anekdot_progress_"+userSlug())||"{}");}catch(e){progress={};}}
+function saveProgress(){try{localStorage.setItem("anekdot_progress_"+userSlug(),JSON.stringify(progress));}catch(e){}}
+function loadLatihanChecked(){try{latihanChecked=JSON.parse(localStorage.getItem("anekdot_latihanchecked_"+userSlug())||"[]");}catch(e){latihanChecked=[];}}
+function saveLatihanChecked(){try{localStorage.setItem("anekdot_latihanchecked_"+userSlug(),JSON.stringify(latihanChecked));}catch(e){}}
+
+function materiUnlocked(i){return i===0||!!materiRead[i-1];}
+function stageMateriDone(){return MATERI.every((m,i)=>!!materiRead[i]);}
+function stageRingkasanDone(){return !!progress.ringkasanDone;}
+function stageProyekDone(){return !!progress.proyekDone;}
+function stageKuisDone(){return kuisScores[KUIS.length-1]!==undefined&&kuisScores[KUIS.length-1]>=KUIS_PASS;}
+function stageLatihanDone(){return latihanChecked.length>=LATIHAN.length;}
+
+const PAGE_REQUIREMENT={
+  ringkasan:{unlocked:stageMateriDone,msg:"Selesaikan membaca seluruh sub-materi (1–"+MATERI.length+") di menu 📖 Materi Lengkap terlebih dahulu — tekan tombol di akhir tiap materi."},
+  proyek:{unlocked:stageRingkasanDone,msg:"Baca 📝 Ringkasan sampai akhir lalu tekan tombol \"Sudah Membaca Ringkasan\" terlebih dahulu."},
+  kuis:{unlocked:stageProyekDone,msg:"Pelajari 🎬 Tugas Proyek sampai akhir lalu tekan tombol \"Sudah Memahami Tugas Proyek\" terlebih dahulu."},
+  latihan:{unlocked:stageKuisDone,msg:"Tuntaskan 🎯 Kuis Bertingkat sampai Level "+KUIS.length+" (skor minimal "+KUIS_PASS+"/5) terlebih dahulu."},
+  evaluasi:{unlocked:stageLatihanDone,msg:"Kerjakan dan tekan \"Cek Jawaban\" pada seluruh "+LATIHAN.length+" soal ✏️ Latihan Soal terlebih dahulu."}
+};
+function pageUnlocked(p){
+  if(p==="beranda"||p==="materi"||p==="rekap")return true;
+  const r=PAGE_REQUIREMENT[p];
+  return r?r.unlocked():true;
+}
+function updateNavLocks(){
+  document.querySelectorAll("nav.mainnav button").forEach(b=>{
+    const ok=pageUnlocked(b.dataset.page);
+    b.classList.toggle("locked",!ok);
+    b.title=ok?"":"🔒 "+(PAGE_REQUIREMENT[b.dataset.page]?PAGE_REQUIREMENT[b.dataset.page].msg:"");
+  });
+}
+/* Helper: jalankan cb() sekali saat elemen `el` mulai terlihat di layar
+   (siswa sudah menggulir sampai sana). Pakai IntersectionObserver bila
+   tersedia; kalau tidak (browser/WebView lama), pakai fallback berbasis
+   event scroll agar tombol tetap bisa aktif dan halaman tidak macet. */
+function watchGateVisible(el,cb){
+  if(typeof IntersectionObserver==="function"){
+    const obs=new IntersectionObserver(entries=>{
+      entries.forEach(en=>{if(en.isIntersecting){cb();obs.disconnect();}});
+    },{threshold:.6});
+    obs.observe(el);
+    return;
+  }
+  function check(){
+    const r=el.getBoundingClientRect();
+    const vh=window.innerHeight||document.documentElement.clientHeight;
+    if(r.top<vh&&r.bottom>0){
+      cb();
+      window.removeEventListener("scroll",check);
+      window.removeEventListener("resize",check);
+    }
+  }
+  window.addEventListener("scroll",check,{passive:true});
+  window.addEventListener("resize",check);
+  check();
+}
+
+/* Kotak "gate" generik: tombol baru aktif setelah elemen ini terlihat penuh
+   di layar (artinya siswa sudah menggulir sampai bagian akhir konten). */
+function attachStageGate(containerEl,opts){
+  const gate=document.createElement("div");
+  gate.className="stageGate";
+  if(opts.isDone()){
+    gate.innerHTML=`<p class="doneMsg">✅ Tahap ini sudah kamu tandai selesai.</p>`;
+    containerEl.appendChild(gate);
+    return;
+  }
+  gate.innerHTML=`<p>👇 Gulir sampai kotak ini terlihat penuh untuk mengaktifkan tombol di bawah.</p>
+    <button class="btnPrimary" disabled>${opts.label}</button>`;
+  containerEl.appendChild(gate);
+  const btn=gate.querySelector("button");
+  watchGateVisible(gate,()=>{btn.disabled=false;});
+  btn.addEventListener("click",()=>{
+    opts.onConfirm();
+    gate.innerHTML=`<p class="doneMsg">✅ Tahap ini sudah kamu tandai selesai.</p>`;
+    updateNavLocks();
+    showProtectToast(opts.toast||"✅ Berhasil ditandai selesai.");
+  });
+}
+
 /* ================= RENDER: BERANDA ================= */
 document.getElementById("tpListEl").innerHTML=TP.map((t,i)=>`<li><span class="tpNum">${i+1}</span><span>${t}</span></li>`).join("");
 
-/* ================= RENDER: MATERI ================= */
+/* ================= RENDER: MATERI (berurutan, wajib dibaca penuh) ================= */
 const subtabsEl=document.getElementById("subtabsEl");
 const matContent=document.getElementById("matContent");
-subtabsEl.innerHTML=MATERI.map((m,i)=>`<button data-i="${i}" class="${i===0?'active':''}"><span class="n">${i+1}.</span>${m.t}</button>`).join("");
-function showMateri(i){
-  matContent.innerHTML=`<h3>${i+1}. ${MATERI[i].t}</h3>${MATERI[i].html}`;
-  subtabsEl.querySelectorAll("button").forEach(b=>b.classList.toggle("active",+b.dataset.i===i));
+let curMateriIdx=0;
+function renderSubtabs(){
+  subtabsEl.innerHTML=MATERI.map((m,i)=>{
+    const locked=!materiUnlocked(i);
+    const mark=materiRead[i]?" ✅":(locked?" 🔒":"");
+    return `<button data-i="${i}" class="${i===curMateriIdx?'active':''} ${locked?'locked':''}" ${locked?"disabled":""}>
+      <span class="n">${i+1}.</span>${m.t}${mark}</button>`;
+  }).join("");
 }
-subtabsEl.addEventListener("click",e=>{const b=e.target.closest("button");if(b)showMateri(+b.dataset.i);});
+function showMateri(i){
+  if(!materiUnlocked(i)){
+    showProtectToast("🔒 Selesaikan membaca Materi "+i+" sampai tuntas terlebih dahulu sebelum membuka Materi "+(i+1)+".");
+    return;
+  }
+  curMateriIdx=i;
+  const isLast=i===MATERI.length-1;
+  const already=!!materiRead[i];
+  const gateHtml=already
+    ?`<div class="stageGate"><p class="doneMsg">✅ Materi ini sudah kamu tandai selesai dibaca.</p></div>`
+    :`<div class="stageGate" id="matGate"><p>👇 Gulir sampai kotak ini terlihat penuh untuk mengaktifkan tombol di bawah.</p>
+       <button class="btnPrimary" id="matNextBtn" disabled>${isLast?"✅ Tandai Selesai Membaca Semua Materi":"✅ Tandai Selesai & Lanjut ke Materi Berikutnya ▶"}</button></div>`;
+  matContent.innerHTML=`<h3>${i+1}. ${MATERI[i].t}</h3>${MATERI[i].html}${gateHtml}`;
+  renderSubtabs();
+  if(!already){
+    const gate=document.getElementById("matGate");
+    const btn=document.getElementById("matNextBtn");
+    watchGateVisible(gate,()=>{btn.disabled=false;});
+    btn.addEventListener("click",()=>{
+      materiRead[i]=true;saveMateriRead();
+      updateNavLocks();
+      if(isLast){
+        showProtectToast("🎉 Semua materi selesai dibaca! Menu Ringkasan sudah terbuka.");
+        showMateri(i);
+      }else{
+        showProtectToast("✅ Materi "+(i+1)+" ditandai selesai. Materi "+(i+2)+" terbuka.");
+        showMateri(i+1);
+      }
+    });
+  }
+}
+subtabsEl.addEventListener("click",e=>{const b=e.target.closest("button");if(b&&!b.disabled)showMateri(+b.dataset.i);});
+loadMateriRead();
+renderSubtabs();
 showMateri(0);
 
 /* ================= RENDER: RINGKASAN ================= */
-document.getElementById("ringkasanContent").innerHTML=RINGKASAN_HTML;
+const ringkasanContentEl=document.getElementById("ringkasanContent");
+function renderRingkasanPage(){
+  ringkasanContentEl.innerHTML=RINGKASAN_HTML;
+  attachStageGate(ringkasanContentEl,{
+    isDone:stageRingkasanDone,
+    label:"✅ Sudah Membaca Ringkasan Sampai Selesai",
+    onConfirm:()=>{progress.ringkasanDone=true;saveProgress();},
+    toast:"✅ Ringkasan ditandai selesai. Menu Tugas Proyek sudah terbuka."
+  });
+}
+renderRingkasanPage();
 
 /* ================= RENDER: PROYEK ================= */
-document.getElementById("proyekContent").innerHTML=PROYEK.map(p=>`
+const proyekContentEl=document.getElementById("proyekContent");
+function renderProyekPage(){
+  proyekContentEl.innerHTML=PROYEK.map(p=>`
  <div class="card proyekCard">
    <h3>${p.judul}</h3>
    <div class="proyekMeta">${p.tag.map(t=>`<span class="tag">${t}</span>`).join("")}</div>
@@ -797,9 +964,16 @@ document.getElementById("proyekContent").innerHTML=PROYEK.map(p=>`
    <h4 style="font-size:.85rem;color:var(--navy);margin-bottom:6px;">Kriteria Penilaian:</h4>
    <ul style="font-size:.85rem;">${p.rubrik.map(r=>`<li>${r}</li>`).join("")}</ul>
  </div>`).join("");
+  attachStageGate(proyekContentEl,{
+    isDone:stageProyekDone,
+    label:"✅ Sudah Memahami Semua Tugas Proyek",
+    onConfirm:()=>{progress.proyekDone=true;saveProgress();},
+    toast:"✅ Tugas Proyek ditandai selesai. Menu Kuis Bertingkat sudah terbuka."
+  });
+}
+renderProyekPage();
 
 /* ================= KUIS LOGIC (berjenjang, level berikutnya terkunci) ================= */
-const KUIS_PASS=3; // skor minimal dari 5 untuk dianggap tuntas & membuka level berikutnya
 const kuisHome=document.getElementById("kuisHome");
 const kuisRunner=document.getElementById("kuisRunner");
 let kuisScores={};
@@ -840,7 +1014,7 @@ function runKuis(lv){
       kuisInProgress=false;
       let score=0;
       level.q.forEach((item,qi)=>{if(answers[qi]===item.ans)score++;});
-      kuisScores[lv]=score;saveKuisScores();
+      kuisScores[lv]=score;saveKuisScores();updateNavLocks();
       const tuntas=score>=KUIS_PASS;
       const pred=score>=4?"Sangat Baik":score>=3?"Baik":score>=2?"Cukup":"Perlu Belajar Lagi";
       kuisRunner.innerHTML=`<div class="card"><div class="resultBox">
@@ -899,8 +1073,13 @@ latihanContent.querySelectorAll(".lCheck").forEach(btn=>{
       const benar=item.accept.some(a=>val.includes(a.toLowerCase()));
       fb.innerHTML=`<b style="color:${benar?'var(--green)':'var(--red)'};">${benar?'Benar!':'Kurang tepat.'}</b> Kunci: <i>${item.accept[0]}</i>. ${item.expl}`;
     }
+    if(!latihanChecked.includes(i)){latihanChecked.push(i);saveLatihanChecked();updateNavLocks();updateLatihanProgressLabel();}
   });
 });
+function updateLatihanProgressLabel(){
+  const el=document.getElementById("latihanProgressLabel");
+  if(el)el.textContent=`Progres: ${latihanChecked.length}/${LATIHAN.length} soal sudah dicek.`;
+}
 
 /* ================= EVALUASI LOGIC (maksimal 3x percobaan) ================= */
 const MAX_EVAL_ATTEMPTS=3;
@@ -1078,7 +1257,7 @@ function openResetModal(){
   overlay.style.cssText="position:fixed;inset:0;background:rgba(11,37,69,.55);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;";
   overlay.innerHTML=`<div style="background:#fff;border-radius:14px;max-width:360px;width:100%;padding:22px 20px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3);">
     <h3 style="margin-top:0;color:var(--red);">Reset Progres Saya?</h3>
-    <p style="font-size:.85rem;color:var(--muted);">Semua skor Kuis Bertingkat, status kunci level, jumlah percobaan Evaluasi, dan riwayat rekap milik <b>${USER.nama} (${USER.kelas})</b> akan dihapus total dari perangkat ini dan kembali ke kondisi kosong. Tindakan ini tidak bisa dibatalkan.</p>
+    <p style="font-size:.85rem;color:var(--muted);">Semua status baca Materi, tanda selesai Ringkasan & Proyek, progres cek Latihan, skor Kuis Bertingkat, status kunci level, jumlah percobaan Evaluasi, dan riwayat rekap milik <b>${USER.nama} (${USER.kelas})</b> akan dihapus total dari perangkat ini dan kembali ke kondisi kosong (semua menu akan terkunci kembali dari awal). Tindakan ini tidak bisa dibatalkan.</p>
     <div class="btnRow" style="justify-content:center;margin-top:16px;">
       <button class="btnGhost" id="cancelReset">Batal</button>
       <button class="btnPrimary" id="confirmReset" style="background:var(--red);">Ya, Reset</button>
@@ -1091,13 +1270,25 @@ function openResetModal(){
     try{localStorage.removeItem("anekdot_kuis_"+userSlug());}catch(e){}
     try{localStorage.removeItem("anekdot_eval_attempts_"+userSlug());}catch(e){}
     try{localStorage.removeItem("anekdot_eval_"+userSlug());}catch(e){}
+    try{localStorage.removeItem("anekdot_materiread_"+userSlug());}catch(e){}
+    try{localStorage.removeItem("anekdot_progress_"+userSlug());}catch(e){}
+    try{localStorage.removeItem("anekdot_latihanchecked_"+userSlug());}catch(e){}
     try{
       const arr=JSON.parse(localStorage.getItem("anekdot_rekap_lokal")||"[]").filter(r=>!(r.nama===USER.nama&&r.kelas===USER.kelas));
       localStorage.setItem("anekdot_rekap_lokal",JSON.stringify(arr));
     }catch(e){}
     loadKuisScores();renderKuisHome();
     updateEvalIntro();renderEval();
-    showProtectToast("✅ Progres kuis & evaluasi kamu sudah direset.");
+    loadMateriRead();loadProgress();loadLatihanChecked();
+    curMateriIdx=0;renderSubtabs();showMateri(0);
+    renderRingkasanPage();renderProyekPage();
+    updateLatihanProgressLabel();
+    latihanContent.querySelectorAll(".lFeedback").forEach(f=>{f.style.display="none";f.innerHTML="";});
+    latihanContent.querySelectorAll(".opt").forEach(o=>o.classList.remove("correct","wrong"));
+    latihanContent.querySelectorAll("input[type=radio]").forEach(r=>r.checked=false);
+    latihanContent.querySelectorAll("input[type=text]").forEach(t=>t.value="");
+    updateNavLocks();
+    showProtectToast("✅ Semua progres kamu (materi, ringkasan, proyek, kuis, latihan, evaluasi) sudah direset.");
     renderRekap();
   });
 }
@@ -1105,6 +1296,7 @@ document.querySelector('nav.mainnav button[data-page="rekap"]').addEventListener
 
 /* ================= INIT ================= */
 loadState();
+updateNavLocks();
 const accessOk=applyAccessGate();
 if(accessOk&&USER.nama&&USER.kelas)enterApp();
 
