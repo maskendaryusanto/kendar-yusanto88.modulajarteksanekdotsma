@@ -23,6 +23,7 @@ p{line-height:1.65;margin:.3em 0 .9em;}
 ul,ol{line-height:1.7;padding-left:1.3em;}
 button{font-family:inherit;cursor:pointer;}
 button:disabled{cursor:not-allowed;opacity:.55;}
+button,select,input,textarea,a{touch-action:manipulation;-webkit-tap-highlight-color:rgba(11,37,69,.15);}
 img{max-width:100%;display:block;}
 .hidden{display:none !important;}
 a{color:var(--blue);}
@@ -74,7 +75,7 @@ header.topbar img.logo{width:40px;height:auto;flex-shrink:0;}
 #menuToggle{display:none;background:none;border:none;color:#fff;font-size:1.4rem;padding:4px 8px;}
 
 nav.mainnav{background:var(--navy2);display:flex;flex-wrap:wrap;gap:2px;padding:0 10px;
-  position:sticky;top:60px;z-index:39;overflow-x:auto;}
+  position:sticky;top:var(--hdrH,60px);z-index:39;overflow-x:auto;}
 nav.mainnav button{background:none;border:none;color:#CFE0F5;padding:12px 14px;font-size:.8rem;
   font-weight:600;border-bottom:3px solid transparent;white-space:nowrap;}
 nav.mainnav button.active{color:#fff;border-bottom-color:var(--yellow);}
@@ -302,9 +303,9 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
           <li><b>Materi Lengkap</b> — pelajari konsep secara detail.</li>
           <li><b>Ringkasan</b> — ulang poin-poin penting. <i>(muncul setelah semua materi dibaca)</i></li>
           <li><b>Tugas Proyek</b> — praktikkan lewat 3 proyek nyata, dikumpulkan ke guru &amp; diverifikasi dengan kode.</li>
-          <li><b>Kuis Bertingkat</b> — uji pemahaman dari level mudah ke sulit.</li>
+          <li><b>Kuis Bertingkat</b> — uji pemahaman dari level mudah ke sulit. <i>(dibuka dengan kode dari guru)</i></li>
           <li><b>Latihan Soal</b> — asah kemampuan dengan pembahasan langsung.</li>
-          <li><b>Evaluasi</b> — tes akhir dengan penilaian otomatis.</li>
+          <li><b>Evaluasi</b> — tes akhir dengan penilaian otomatis. <i>(dibuka dengan kode dari guru)</i></li>
         </ol>
       </div>
     </section>
@@ -340,7 +341,8 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
       <div class="pageHead"><div class="eyebrow">ASAH KEMAMPUAN</div><h2>10 Soal Latihan</h2></div>
       <div class="card"><p style="font-size:.85rem;margin:0;">Kerjakan lalu tekan <b>Cek Jawaban</b> pada tiap soal untuk melihat kunci &amp; pembahasan.</p>
         <p style="font-size:.8rem;margin:8px 0 0;color:var(--muted);" id="latihanProgressLabel">Progres: 0/10 soal sudah dicek.</p>
-        <p style="font-size:.78rem;margin:4px 0 0;color:var(--muted);">🔒 Menu Evaluasi terbuka setelah semua soal di halaman ini sudah kamu cek jawabannya.</p></div>
+        <p style="font-size:.78rem;margin:4px 0 0;color:var(--muted);">🔒 Menu Evaluasi muncul setelah semua soal di halaman ini kamu cek jawabannya <b>dan</b> memasukkan kode buka Evaluasi dari guru.</p></div>
+      <div id="evalGateBox"></div>
       <div class="card" id="latihanContent"></div>
     </section>
 
@@ -366,7 +368,7 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
 
 <!-- PANEL GURU (tersembunyi): buka dengan menambahkan #guru di akhir tautan -->
 <div id="guruPanel" style="display:none;position:fixed;inset:0;z-index:99999;background:#f4f6fb;overflow:auto;padding:24px 16px;">
-  <div style="max-width:620px;margin:0 auto;background:#fff;border-radius:14px;padding:22px;box-shadow:0 6px 24px rgba(0,0,0,.12);">
+  <div style="max-width:760px;margin:0 auto;background:#fff;border-radius:14px;padding:22px;box-shadow:0 6px 24px rgba(0,0,0,.12);">
     <h2 style="margin:0 0 6px;color:#1a2b4a;">🔑 Panel Guru</h2>
     <div id="guruLogin">
       <p style="font-size:.88rem;color:#555;">Masukkan password guru.</p>
@@ -376,13 +378,13 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
       <button id="guruTutup" class="btnGhost" style="margin-left:6px;">Tutup</button>
     </div>
     <div id="guruIsi" style="display:none;">
-      <p style="font-size:.88rem;color:#555;">Isi kode verifikasi yang diinginkan untuk tiap proyek, lalu klik <b>Buat Hash</b>. Kalau kode tidak ingin diganti, panel ini tidak perlu dipakai.</p>
-      <label style="font-size:.85rem;">Kode Proyek 1</label><input id="gk0" style="width:100%;padding:9px 11px;border:1.5px solid #ccd;border-radius:8px;box-sizing:border-box;margin:3px 0 10px;">
-      <label style="font-size:.85rem;">Kode Proyek 2</label><input id="gk1" style="width:100%;padding:9px 11px;border:1.5px solid #ccd;border-radius:8px;box-sizing:border-box;margin:3px 0 10px;">
-      <label style="font-size:.85rem;">Kode Proyek 3</label><input id="gk2" style="width:100%;padding:9px 11px;border:1.5px solid #ccd;border-radius:8px;box-sizing:border-box;margin:3px 0 10px;">
-      <button id="guruBuat" class="btnPrimary">Buat Hash</button>
-      <p style="font-size:.82rem;color:#555;margin-top:14px;">Salin baris ini, lalu ganti baris <code>const PROYEK_KODE_HASH=[...];</code> di file index.html:</p>
-      <textarea id="guruOut" readonly style="width:100%;height:110px;font-family:monospace;font-size:.75rem;box-sizing:border-box;"></textarea>
+      <p style="font-size:.88rem;color:#555;">Kode tiap kelas: 3 kode verifikasi proyek + kode buka Kuis + kode buka Evaluasi. Isi/acak lalu klik <b>Buat Hash</b>. Kelompok kode yang dibiarkan kosong seluruhnya tidak akan diganti.</p>
+      <div id="guruGrid" style="font-size:.8rem;overflow-x:auto;"></div>
+      <button id="guruAcakP" class="btnGhost" style="margin-top:8px;">🎲 Acak Kode Proyek</button>
+      <button id="guruAcakG" class="btnGhost" style="margin-top:8px;margin-left:6px;">🎲 Acak Kode Kuis &amp; Evaluasi</button>
+      <button id="guruBuat" class="btnPrimary" style="margin-top:8px;margin-left:6px;">Buat Hash</button>
+      <p style="font-size:.82rem;color:#555;margin-top:14px;">Salin hasil di bawah, lalu ganti baris yang namanya sama di file index.html (<code>const PROYEK_KODE_HASH=...;</code> dan/atau <code>const KODE_GATE_HASH=...;</code>):</p>
+      <textarea id="guruOut" readonly style="width:100%;height:140px;font-family:monospace;font-size:.72rem;box-sizing:border-box;"></textarea>
       <button id="guruSalin" class="btnGhost" style="margin-top:8px;">Salin</button>
       <button id="guruTutup2" class="btnGhost" style="margin-top:8px;margin-left:6px;">Tutup Panel</button>
     </div>
@@ -549,9 +551,9 @@ const PROYEK = [
 /* ================= KODE VERIFIKASI TUGAS PROYEK (DISAMARKAN) =================
    Kode asli TIDAK tersimpan di file ini, hanya "sidik jari" (hash) satu arah,
    sehingga tidak bisa dibaca siswa lewat "lihat sumber halaman".
-   Urutan = Proyek 1, 2, 3. Untuk mengganti kode, buat hash baru dengan file
-   "pembuat-kode-guru.html" (khusus guru, jangan dibagikan ke siswa), lalu
-   tempel hasilnya menggantikan daftar di bawah ini. */
+   Setiap kelas (X-1 s/d X-6) punya 3 kode sendiri (Proyek 1, 2, 3). Untuk mengganti
+   kode, buka Panel Guru (tambahkan #guru di akhir tautan), buat hash baru, lalu
+   tempel hasilnya menggantikan baris di bawah ini. */
 /* SHA-256 murni JS (sinkron, jalan juga di file:// tanpa HTTPS) */
 function sha256hex(msg){
   function R(n,x){return (x>>>n)|(x<<(32-n));}
@@ -582,7 +584,55 @@ function hashKode(kode,i){
   return h;
 }
 
-const PROYEK_KODE_HASH=["01f7ec1c68755bf4f006933aab05c455fdc6adeb35bbc40e68d1083ff9b7fc10", "d37131538082090efdb304d9ff8838f65b8631ebcbf4fe093e47362151154341", "5825189277a654ba7e91122737c948c9f088cd833851310c65c03054bf5364f3"];
+const PROYEK_KODE_HASH={"X-1": ["f3203639144febd376132b1cace44471ab0badac0886944c0f621ca21265a48d", "08fa19df15b632553b2eb748de7bb75467c06657254ef93195fd45a9133ca78a", "8922b377dd2bac5efaa8317115a64a49c6d2fe576cb4b412bd1fc8f96c4fa6a6"], "X-2": ["91692407269ff9089106cc19ad471ee4a3c2b7006148b579574a3090b465a87a", "e5a75a4445480021de4fd9cec57abd264a725cb1d123d0fcb3cdc0a73913439c", "e51bae21f6ccf7eb42738196b36130505ca083adb86f2e94858fdccb6e1e5c89"], "X-3": ["2b894521b1268aa66d600da308fb654b64c428fcc3c100fee3319bc5f5c123c7", "2211e32b9cfb474f56480b13cf87a6a64074a45d12f1d04f7827a96703766413", "74257b296fc3b89fe152704b31ed72c3653cd2eec65f38847db96f93ffab4c2b"], "X-4": ["4965749a0d4dcf0959518c529a864e7b2955ec79e29c7018d2d20c63dc7c6faa", "0271ceea467650645f1e2005806ee0a6c9f5a6a252bf54df500e63e1d290005a", "6348d19c38db8b649b42b0dd5734b0fd5d70407fbbf84c814f8d713ad34cb0d2"], "X-5": ["4354d7afcd14e893c34c29d9d9f27f6db6f9e7fd240e7349e8a16367f50029e2", "92d841ea31ba4a04711e55c92d2436d0cfa2a546d76b98433f0e161c81d57e0f", "c02f6aea56c24c4c55fa270595565926d207bd365ba05f33305c9d7b330c419d"], "X-6": ["9cdc6fe54a7a6e8004541740a6b80f001f6920ffee3643241ab745895f21d9b5", "e313900623e262aa6452a8dd508284022f61ef8e56742e2c6dc2378858039378", "c5ca65b816e01f4a83e1dfecb723c7ad24450b7d42c3e4278ff3b94023b19d95"]};
+
+/* Kode BUKA menu Kuis Bertingkat & Evaluasi dari guru (per kelas, disamarkan/hash).
+   Guru memberikan kode ini saat siswa siap/diawasi mengerjakan. */
+const KODE_GATE_HASH={"X-1": {"kuis": "4d837a6b3fc91b912c5ff7b750b28c8b7476e5b49b45aa8af21b19a29bc3fc38", "eval": "8cbbce1c6431514d64e5c675510a461605d47884b70a3a9f990d2dc00151b8e6"}, "X-2": {"kuis": "09d6187d9ce6f5da957a72e62fbb05014ea9f79280c8fef6903ebdbae3a1440e", "eval": "6b28c15726939165ef758b349350bdb5db153cb139afa9da2490784d27b89d1a"}, "X-3": {"kuis": "910947b9d5aa3ca30e3fd60047a5736efbf645d717a7f638ce63a278967429b2", "eval": "7fe9a7098f1172e26897906c9e9501161ad270c4d6ab449a5932c0f9d68b81bd"}, "X-4": {"kuis": "49396342bf30eb6e1c52551d9f3190b6f1205b4604cc1270b134023d0fdb091e", "eval": "e4a40e116e3a161cba2288fee26ec5e2335c03804d3e42c02d6b832f6fd8b3b9"}, "X-5": {"kuis": "b690c997a7a95aa2119523326439a3ba71732460cb6ac2e43b775f5373e6a01e", "eval": "f474c61f733f795db761aa89fdb8920018a7f70745f93339741ea4cef718b7db"}, "X-6": {"kuis": "58e02a22b7cfc901b4f341deab1a9dfba2e8e1cc4e51665030a0660f73ff8ae7", "eval": "4625bd3277fcf3afa861c63a9ad9639df07ad1d8ccbb9a8b1c0c87a4b24cb14c"}};
+function cekKodeGate(kind,val){
+  const hs=KODE_GATE_HASH[USER.kelas];
+  return !!hs&&hashKode(val,USER.kelas+"#"+kind)===hs[kind];
+}
+/* Jalankan pengecekan kode (agak berat di HP lambat) dengan umpan balik "Memeriksa…" */
+function withBusy(btn,fn){
+  if(btn.dataset.busy)return;
+  btn.dataset.busy="1";const t=btn.textContent;btn.disabled=true;btn.textContent="Memeriksa…";
+  setTimeout(()=>{try{fn();}finally{btn.disabled=false;btn.textContent=t;delete btn.dataset.busy;}},40);
+}
+/* Kotak input kode buka. kind: "kuis" | "eval" -> menyimpan progress.kuisOpen / progress.evalOpen */
+function renderGateBox(host,kind,judul,onOk){
+  if(progress[kind+"Open"]){
+    host.innerHTML=`<div class="card"><p class="pcStatus" style="color:var(--green);font-weight:700;margin:0;">✅ ${judul} sudah dibuka dengan kode dari guru.</p></div>`;
+    return;
+  }
+  host.innerHTML=`<div class="card"><h4 style="margin:0 0 6px;color:var(--navy);">🔐 ${judul}</h4>
+    <p style="font-size:.83rem;margin:0 0 10px;">Minta <b>kode buka</b> kepada guru. Menu ini tidak akan muncul sebelum kode yang benar dimasukkan.</p>
+    <div class="pcRow" style="display:flex;gap:8px;flex-wrap:wrap;"><input type="text" class="gateInput" placeholder="Kode buka dari guru" autocomplete="off" maxlength="20"
+      style="flex:1;min-width:140px;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font-size:.9rem;">
+    <button class="btnPrimary gateBtn">Buka</button></div>
+    <div class="gateErr" style="color:var(--red);font-size:.8rem;margin-top:6px;"></div></div>`;
+  const inp=host.querySelector(".gateInput"),err=host.querySelector(".gateErr");
+  const go=()=>{
+    const v=inp.value.trim();
+    if(!v){err.textContent="Masukkan kode dari guru terlebih dahulu.";return;}
+    if(!cekKodeGate(kind,v)){err.textContent="Kode salah. Pastikan kode yang dimasukkan benar dari guru.";return;}
+    progress[kind+"Open"]=true;saveProgress();onOk();
+  };
+  const gbtn=host.querySelector(".gateBtn");
+  gbtn.addEventListener("click",()=>withBusy(gbtn,go));
+  inp.addEventListener("keydown",e=>{if(e.key==="Enter")gbtn.click();});
+}
+function renderEvalGate(){
+  const host=document.getElementById("evalGateBox");if(!host)return;
+  const st=(stageLatihanDone()?"1":"0")+(progress.evalOpen?"1":"0")+USER.kelas;
+  if(host.dataset.st===st)return;   // hindari menghapus ketikan siswa
+  host.dataset.st=st;
+  if(!stageLatihanDone()){host.innerHTML="";return;}
+  renderGateBox(host,"eval","Buka Menu Evaluasi",()=>{
+    host.dataset.st="";renderEvalGate();updateNavLocks();
+    showProtectToast("✅ Kode benar. Menu Evaluasi sekarang sudah muncul.");
+  });
+}
 
 /* ================= KUIS 5 LEVEL x 5 SOAL ================= */
 const KUIS = [
@@ -777,6 +827,7 @@ function enterApp(){
   }
   setTimeout(()=>showProtectToast("🔒 Konten ini dilindungi. Dilarang menyalin, memfoto, atau mengambil tangkapan layar tanpa izin guru mapel."),600);
   goPage("beranda");
+  syncHeaderHeight();setTimeout(syncHeaderHeight,300);
 }
 document.getElementById("logoutBtn").addEventListener("click",()=>{
   openLogoutModal();
@@ -843,12 +894,33 @@ document.addEventListener("visibilitychange",()=>{
   const appVisible=document.getElementById("app").style.display!=="none";
   document.getElementById("privacyBlur").style.display=(document.hidden&&appVisible)?"flex":"none";
 });
+/* Layar penutup privasi. Sebelumnya bisa "nyangkut" (event focus tidak selalu datang,
+   terutama di HP/WebView/iframe) sehingga semua tombol tak bisa ditekan.
+   Perbaikan: (1) di layar sentuh tidak dipicu oleh blur biasa (cukup visibilitychange),
+   (2) hilang otomatis saat disentuh/diklik/digerakkan/ditekan tombol, saat fokus kembali,
+   atau setelah 2 detik bila halaman sedang terlihat. */
+const IS_TOUCH=("ontouchstart" in window)||(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
+function hidePrivacyBlur(){document.getElementById("privacyBlur").style.display="none";}
 window.addEventListener("blur",()=>{
+  if(IS_TOUCH)return;
   const appVisible=document.getElementById("app").style.display!=="none";
-  if(appVisible)document.getElementById("privacyBlur").style.display="flex";
+  if(appVisible){
+    document.getElementById("privacyBlur").style.display="flex";
+    setTimeout(()=>{if(!document.hidden)hidePrivacyBlur();},2000);
+  }
 });
-window.addEventListener("focus",()=>{document.getElementById("privacyBlur").style.display="none";});
+window.addEventListener("focus",hidePrivacyBlur);
+window.addEventListener("pageshow",hidePrivacyBlur);
+["pointerdown","touchstart","mousedown","mousemove","keydown","click"].forEach(ev=>
+  document.addEventListener(ev,()=>{if(!document.hidden)hidePrivacyBlur();},true));
 
+/* Tinggi header bisa >60px (layar sempit/notch); sesuaikan agar menu tidak tertutup header */
+function syncHeaderHeight(){
+  const h=document.querySelector("header.topbar");
+  if(h&&h.offsetHeight)document.documentElement.style.setProperty("--hdrH",h.offsetHeight+"px");
+}
+window.addEventListener("resize",syncHeaderHeight);
+window.addEventListener("orientationchange",syncHeaderHeight);
 /* ================= NAV ================= */
 document.querySelectorAll("nav.mainnav button").forEach(b=>{
   b.addEventListener("click",()=>{
@@ -879,7 +951,7 @@ function goPage(p){
 const KUIS_PASS=3; // skor minimal dari 5 untuk tuntas & membuka level/tahap berikutnya
 
 let materiRead=[];         // status baca penuh tiap sub-materi (array boolean per index)
-let progress={};           // status ringkasan & proyek: {ringkasanDone:bool, proyekOk:[bool per proyek]}
+let progress={};           // status tahapan: {ringkasanDone, proyekOk:[bool per proyek], kuisOpen, evalOpen}
 let latihanChecked=[];     // index soal Latihan yang sudah ditekan "Cek Jawaban"
 
 function loadMateriRead(){try{materiRead=JSON.parse(localStorage.getItem("anekdot_materiread_"+userSlug())||"[]");}catch(e){materiRead=[];}}
@@ -900,9 +972,9 @@ function stageLatihanDone(){return latihanChecked.length>=LATIHAN.length;}
 const PAGE_REQUIREMENT={
   ringkasan:{unlocked:stageMateriDone,msg:"Selesaikan membaca seluruh sub-materi (1–"+MATERI.length+") di menu 📖 Materi Lengkap terlebih dahulu — tekan tombol di akhir tiap materi."},
   proyek:{unlocked:stageRingkasanDone,msg:"Baca 📝 Ringkasan sampai akhir lalu tekan tombol \"Sudah Membaca Ringkasan\" terlebih dahulu."},
-  kuis:{unlocked:stageProyekDone,msg:"Kumpulkan seluruh 🎬 Tugas Proyek ke guru dan masukkan kode verifikasi dari guru terlebih dahulu."},
+  kuis:{unlocked:()=>stageProyekDone()&&!!progress.kuisOpen,msg:"Kumpulkan seluruh 🎬 Tugas Proyek ke guru, lalu masukkan kode buka Kuis dari guru terlebih dahulu."},
   latihan:{unlocked:stageKuisDone,msg:"Tuntaskan 🎯 Kuis Bertingkat sampai Level "+KUIS.length+" (skor minimal "+KUIS_PASS+"/5) terlebih dahulu."},
-  evaluasi:{unlocked:stageLatihanDone,msg:"Kerjakan dan tekan \"Cek Jawaban\" pada seluruh "+LATIHAN.length+" soal ✏️ Latihan Soal terlebih dahulu."}
+  evaluasi:{unlocked:()=>stageLatihanDone()&&!!progress.evalOpen,msg:"Cek jawaban seluruh "+LATIHAN.length+" soal ✏️ Latihan Soal, lalu masukkan kode buka Evaluasi dari guru terlebih dahulu."}
 };
 function pageUnlocked(p){
   if(p==="beranda"||p==="materi"||p==="rekap")return true;
@@ -928,7 +1000,7 @@ function watchGateVisible(el,cb){
   if(typeof IntersectionObserver==="function"){
     const obs=new IntersectionObserver(entries=>{
       entries.forEach(en=>{if(en.isIntersecting){cb();obs.disconnect();}});
-    },{threshold:.6});
+    },{threshold:.3});
     obs.observe(el);
     return;
   }
@@ -1060,20 +1132,28 @@ function renderProyekPage(){
  </div>`;
   }).join("");
   proyekContentEl.innerHTML=`<div class="card"><p style="margin:0;font-size:.88rem;"><b>Progres Tugas Proyek: ${okN}/${PROYEK.length} terverifikasi.</b>
-    ${okN>=PROYEK.length?"🎉 Semua proyek selesai — menu Kuis Bertingkat sudah muncul.":"Menu Kuis Bertingkat akan muncul setelah ketiga proyek terverifikasi guru."}</p></div>`+cards;
-  proyekContentEl.querySelectorAll(".pkBtn").forEach(btn=>btn.addEventListener("click",()=>{
+    ${okN<PROYEK.length?"Kode buka Kuis Bertingkat baru bisa dimasukkan setelah ketiga proyek terverifikasi guru.":(progress.kuisOpen?"🎉 Semua proyek selesai — menu Kuis Bertingkat sudah muncul.":"🎉 Semua proyek terverifikasi! Masukkan kode buka Kuis dari guru di bawah ini.")}</p></div>`
+    +(okN>=PROYEK.length?'<div id="gateKuisBox"></div>':"")+cards;
+  if(okN>=PROYEK.length){
+    renderGateBox(document.getElementById("gateKuisBox"),"kuis","Buka Menu Kuis Bertingkat",()=>{
+      renderProyekPage();updateNavLocks();
+      showProtectToast("✅ Kode benar. Menu Kuis Bertingkat sekarang sudah muncul.");
+    });
+  }
+  proyekContentEl.querySelectorAll(".pkBtn").forEach(btn=>btn.addEventListener("click",()=>withBusy(btn,()=>{
     const i=+btn.dataset.i;
     const inp=document.getElementById("pkInput"+i);
     const err=document.getElementById("pkErr"+i);
     const val=inp.value.trim().toLowerCase();
     if(!val){err.textContent="Masukkan kode dari guru terlebih dahulu.";return;}
-    if(hashKode(val,i)!==PROYEK_KODE_HASH[i]){err.textContent="Kode salah. Pastikan proyek sudah dikumpulkan dan kode benar dari guru.";return;}
+    const hs=PROYEK_KODE_HASH[USER.kelas];
+    if(!hs||hashKode(val,USER.kelas+"#"+i)!==hs[i]){err.textContent="Kode salah. Pastikan proyek sudah dikumpulkan dan kode benar dari guru.";return;}
     if(!progress.proyekOk)progress.proyekOk=[];
     progress.proyekOk[i]=true;saveProgress();
     renderProyekPage();
     updateNavLocks();
     showProtectToast("✅ Proyek "+(i+1)+" terverifikasi guru ("+proyekOkCount()+"/"+PROYEK.length+").");
-  }));
+  })));
 }
 renderProyekPage();
 
@@ -1183,6 +1263,7 @@ latihanContent.querySelectorAll(".lCheck").forEach(btn=>{
 function updateLatihanProgressLabel(){
   const el=document.getElementById("latihanProgressLabel");
   if(el)el.textContent=`Progres: ${latihanChecked.length}/${LATIHAN.length} soal sudah dicek.`;
+  renderEvalGate();
 }
 
 /* ================= EVALUASI LOGIC (maksimal 3x percobaan) ================= */
@@ -1403,19 +1484,40 @@ document.querySelector('nav.mainnav button[data-page="rekap"]').addEventListener
 const GURU_PASS_HASH="62bf4b3b99eb253d5de7d656d97c8db5dd76e19703ba8d696b4ebe05aa47a33d";
 (function(){
   const $=id=>document.getElementById(id);
+  const KL=["X-1","X-2","X-3","X-4","X-5","X-6"];
+  const COLS=["p0","p1","p2","kuis","eval"],HEAD=["Proyek 1","Proyek 2","Proyek 3","Buka Kuis","Buka Evaluasi"];
+  const inputStyle='width:100%;min-width:84px;padding:7px 8px;border:1.5px solid #ccd;border-radius:7px;box-sizing:border-box;font-family:monospace;';
+  $("guruGrid").innerHTML='<table style="width:100%;border-collapse:collapse;"><tr><th style="text-align:left;padding:4px;">Kelas</th>'+HEAD.map(h=>'<th>'+h+'</th>').join("")+'</tr>'+
+    KL.map(k=>'<tr><td style="padding:4px;font-weight:700;">'+k+'</td>'+COLS.map(c=>'<td style="padding:3px;"><input id="gk_'+k+'_'+c+'" style="'+inputStyle+'"></td>').join("")+'</tr>').join("")+'</table>';
   function tutup(){$("guruPanel").style.display="none";$("guruIsi").style.display="none";$("guruLogin").style.display="block";$("guruPass").value="";
     if(location.hash==="#guru")history.replaceState(null,"",location.pathname+location.search);}
-  function cek(){
-    if(location.hash==="#guru"){$("guruPanel").style.display="block";setTimeout(()=>$("guruPass").focus(),50);}
-  }
+  function cek(){if(location.hash==="#guru"){$("guruPanel").style.display="block";setTimeout(()=>$("guruPass").focus(),50);}}
   $("guruMasuk").addEventListener("click",()=>{
     if(hashKode($("guruPass").value,99)!==GURU_PASS_HASH){$("guruErr").textContent="Password guru salah.";return;}
     $("guruErr").textContent="";$("guruLogin").style.display="none";$("guruIsi").style.display="block";
   });
   $("guruPass").addEventListener("keydown",e=>{if(e.key==="Enter")$("guruMasuk").click();});
+  function acak(cols){
+    const A="abcdefghjkmnpqrstuvwxyz23456789",used=new Set();
+    document.querySelectorAll("#guruGrid input").forEach(x=>{if(x.value)used.add(x.value.trim().toLowerCase());});
+    KL.forEach(k=>cols.forEach(c=>{
+      let v;do{const r=new Uint8Array(5);(window.crypto||window.msCrypto).getRandomValues(r);v=Array.from(r,b=>A[b%A.length]).join("");}while(used.has(v));
+      used.add(v);$("gk_"+k+"_"+c).value=v;
+    }));
+    $("guruOut").value="";
+  }
+  $("guruAcakP").addEventListener("click",()=>acak(["p0","p1","p2"]));
+  $("guruAcakG").addEventListener("click",()=>acak(["kuis","eval"]));
   $("guruBuat").addEventListener("click",()=>{
-    const arr=[0,1,2].map(i=>hashKode($("gk"+i).value,i));
-    $("guruOut").value="const PROYEK_KODE_HASH="+JSON.stringify(arr)+";";
+    const val=(k,c)=>$("gk_"+k+"_"+c).value.trim();
+    const grp=[["p0","p1","p2"],["kuis","eval"]];
+    const stat=grp.map(g=>{let n=0;KL.forEach(k=>g.forEach(c=>{if(val(k,c))n++;}));return {n,total:KL.length*g.length};});
+    if(stat.some(x=>x.n>0&&x.n<x.total)){$("guruOut").value="Ada kolom yang masih kosong pada kelompok yang sedang diisi. Lengkapi semua kelas atau kosongkan seluruh kelompok itu.";return;}
+    if(!stat[0].n&&!stat[1].n){$("guruOut").value="Isi kode terlebih dahulu (atau klik tombol Acak).";return;}
+    const lines=[];
+    if(stat[0].n){const o={};KL.forEach(k=>{o[k]=["p0","p1","p2"].map((c,i)=>hashKode(val(k,c),k+"#"+i));});lines.push("const PROYEK_KODE_HASH="+JSON.stringify(o)+";");}
+    if(stat[1].n){const o={};KL.forEach(k=>{o[k]={kuis:hashKode(val(k,"kuis"),k+"#kuis"),eval:hashKode(val(k,"eval"),k+"#eval")};});lines.push("const KODE_GATE_HASH="+JSON.stringify(o)+";");}
+    $("guruOut").value=lines.join("\n\n");
   });
   $("guruSalin").addEventListener("click",()=>{
     const t=$("guruOut");t.select();
