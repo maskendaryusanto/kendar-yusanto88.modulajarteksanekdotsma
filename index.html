@@ -121,6 +121,12 @@ main{flex:1;max-width:980px;margin:0 auto;width:100%;padding:22px 16px 60px;}
 .matBlock.active{display:block;}
 .subtabs button.locked, nav.mainnav button.locked{opacity:.5;cursor:not-allowed;}
 .subtabs button.locked:hover{color:var(--navy);}
+.proyekCheck{border-top:1px dashed var(--line);margin-top:14px;padding-top:12px;}
+.proyekCheck .pcStatus{font-size:.83rem;margin:0 0 10px;}
+.proyekCheck.done .pcStatus{color:var(--green);font-weight:700;margin:0;}
+.proyekCheck .pcRow{display:flex;gap:8px;flex-wrap:wrap;}
+.proyekCheck input{flex:1;min-width:140px;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font-size:.9rem;}
+.proyekCheck .pcErr{color:var(--red);font-size:.8rem;margin-top:6px;}
 .stageGate{background:#FFF9EC;border:1.5px dashed var(--yellow-dark);border-radius:10px;
   padding:14px 16px;margin-top:18px;text-align:center;}
 .stageGate p{margin:0 0 10px;font-size:.82rem;color:var(--muted);}
@@ -216,7 +222,7 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
     <div class="logoWrap"><img src="data:image/png;base64,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" alt="Logo SMAN 1 Pronojiwo"></div>
     <h1 style="margin-bottom:10px;">🔒 Akses Ditutup</h1>
     <p id="lockMsg" style="color:var(--muted);font-size:.88rem;"></p>
-    <p style="font-size:.75rem;color:var(--muted);margin-top:16px;">Jam belajar dibuka setiap hari pukul <b>07.00–15.00 WIB</b>.</p>
+    <p style="font-size:.75rem;color:var(--muted);margin-top:16px;">Jam belajar dibuka setiap hari pukul <b>05.00–20.00 WIB</b>.</p>
   </div>
 </div>
 
@@ -291,11 +297,11 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
       </div>
       <div class="card">
         <h3>🗺️ Peta Perjalanan Belajarmu</h3>
-        <p style="font-size:.85rem;">Gunakan menu navigasi di atas untuk berpindah antar bagian. Urutan yang disarankan:</p>
+        <p style="font-size:.85rem;">Gunakan menu navigasi di atas untuk berpindah antar bagian. Menu berikutnya akan <b>muncul otomatis</b> setelah kamu menyelesaikan tahap sebelumnya:</p>
         <ol style="font-size:.85rem;">
           <li><b>Materi Lengkap</b> — pelajari konsep secara detail.</li>
-          <li><b>Ringkasan</b> — ulang poin-poin penting.</li>
-          <li><b>Tugas Proyek</b> — praktikkan lewat 3 proyek nyata.</li>
+          <li><b>Ringkasan</b> — ulang poin-poin penting. <i>(muncul setelah semua materi dibaca)</i></li>
+          <li><b>Tugas Proyek</b> — praktikkan lewat 3 proyek nyata, dikumpulkan ke guru &amp; diverifikasi dengan kode.</li>
           <li><b>Kuis Bertingkat</b> — uji pemahaman dari level mudah ke sulit.</li>
           <li><b>Latihan Soal</b> — asah kemampuan dengan pembahasan langsung.</li>
           <li><b>Evaluasi</b> — tes akhir dengan penilaian otomatis.</li>
@@ -358,6 +364,30 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
   <footer class="appfoot">© 2026 SMA Negeri 1 Pronojiwo — Media Pembelajaran Interaktif Teks Anekdot</footer>
 </div>
 
+<!-- PANEL GURU (tersembunyi): buka dengan menambahkan #guru di akhir tautan -->
+<div id="guruPanel" style="display:none;position:fixed;inset:0;z-index:99999;background:#f4f6fb;overflow:auto;padding:24px 16px;">
+  <div style="max-width:620px;margin:0 auto;background:#fff;border-radius:14px;padding:22px;box-shadow:0 6px 24px rgba(0,0,0,.12);">
+    <h2 style="margin:0 0 6px;color:#1a2b4a;">🔑 Panel Guru</h2>
+    <div id="guruLogin">
+      <p style="font-size:.88rem;color:#555;">Masukkan password guru.</p>
+      <input type="password" id="guruPass" placeholder="Password guru" style="width:100%;padding:10px 12px;border:1.5px solid #ccd;border-radius:9px;box-sizing:border-box;">
+      <div id="guruErr" style="color:#c0392b;font-size:.82rem;margin:6px 0;"></div>
+      <button id="guruMasuk" class="btnPrimary">Masuk</button>
+      <button id="guruTutup" class="btnGhost" style="margin-left:6px;">Tutup</button>
+    </div>
+    <div id="guruIsi" style="display:none;">
+      <p style="font-size:.88rem;color:#555;">Isi kode verifikasi yang diinginkan untuk tiap proyek, lalu klik <b>Buat Hash</b>. Kalau kode tidak ingin diganti, panel ini tidak perlu dipakai.</p>
+      <label style="font-size:.85rem;">Kode Proyek 1</label><input id="gk0" style="width:100%;padding:9px 11px;border:1.5px solid #ccd;border-radius:8px;box-sizing:border-box;margin:3px 0 10px;">
+      <label style="font-size:.85rem;">Kode Proyek 2</label><input id="gk1" style="width:100%;padding:9px 11px;border:1.5px solid #ccd;border-radius:8px;box-sizing:border-box;margin:3px 0 10px;">
+      <label style="font-size:.85rem;">Kode Proyek 3</label><input id="gk2" style="width:100%;padding:9px 11px;border:1.5px solid #ccd;border-radius:8px;box-sizing:border-box;margin:3px 0 10px;">
+      <button id="guruBuat" class="btnPrimary">Buat Hash</button>
+      <p style="font-size:.82rem;color:#555;margin-top:14px;">Salin baris ini, lalu ganti baris <code>const PROYEK_KODE_HASH=[...];</code> di file index.html:</p>
+      <textarea id="guruOut" readonly style="width:100%;height:110px;font-family:monospace;font-size:.75rem;box-sizing:border-box;"></textarea>
+      <button id="guruSalin" class="btnGhost" style="margin-top:8px;">Salin</button>
+      <button id="guruTutup2" class="btnGhost" style="margin-top:8px;margin-left:6px;">Tutup Panel</button>
+    </div>
+  </div>
+</div>
 <script>
 /* ================= DATA: TUJUAN PEMBELAJARAN ================= */
 const TP = [
@@ -516,6 +546,44 @@ const PROYEK = [
  rubrik:["Kejelasan pesan kritik (25%)","Kesantunan berbicara & sikap (25%)","Penguasaan panggung/ekspresi (25%)","Orisinalitas materi (25%)"]}
 ];
 
+/* ================= KODE VERIFIKASI TUGAS PROYEK (DISAMARKAN) =================
+   Kode asli TIDAK tersimpan di file ini, hanya "sidik jari" (hash) satu arah,
+   sehingga tidak bisa dibaca siswa lewat "lihat sumber halaman".
+   Urutan = Proyek 1, 2, 3. Untuk mengganti kode, buat hash baru dengan file
+   "pembuat-kode-guru.html" (khusus guru, jangan dibagikan ke siswa), lalu
+   tempel hasilnya menggantikan daftar di bawah ini. */
+/* SHA-256 murni JS (sinkron, jalan juga di file:// tanpa HTTPS) */
+function sha256hex(msg){
+  function R(n,x){return (x>>>n)|(x<<(32-n));}
+  var K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+  var H=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+  var s=unescape(encodeURIComponent(msg)),l=s.length,i,j,w=[];
+  for(i=0;i<l;i++)w[i>>2]|=s.charCodeAt(i)<<(24-(i%4)*8);
+  w[l>>2]|=0x80<<(24-(l%4)*8);
+  w[((l+8>>6)+1)*16-1]=l*8;
+  for(var o=0;o<w.length;o+=16){
+    var W=new Array(64),a=H[0],b=H[1],c=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
+    for(j=0;j<64;j++){
+      if(j<16)W[j]=w[o+j]|0;
+      else{var s0=R(7,W[j-15])^R(18,W[j-15])^(W[j-15]>>>3),s1=R(17,W[j-2])^R(19,W[j-2])^(W[j-2]>>>10);W[j]=(W[j-16]+s0+W[j-7]+s1)|0;}
+      var S1=R(6,e)^R(11,e)^R(25,e),ch=(e&f)^(~e&g),t1=(h+S1+ch+K[j]+W[j])|0,S0=R(2,a)^R(13,a)^R(22,a),mj=(a&b)^(a&c)^(b&c),t2=(S0+mj)|0;
+      h=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0;
+    }
+    H[0]=(H[0]+a)|0;H[1]=(H[1]+b)|0;H[2]=(H[2]+c)|0;H[3]=(H[3]+d)|0;H[4]=(H[4]+e)|0;H[5]=(H[5]+f)|0;H[6]=(H[6]+g)|0;H[7]=(H[7]+h)|0;
+  }
+  var out="";for(i=0;i<8;i++)out+=("00000000"+(H[i]>>>0).toString(16)).slice(-8);
+  return out;
+}
+/* Hash kode: diberi garam per-proyek + 10.000 putaran agar sulit ditebak */
+var KODE_SALT="anekdot-x-2026";
+function hashKode(kode,i){
+  var h=sha256hex(KODE_SALT+"|"+i+"|"+String(kode).trim().toLowerCase());
+  for(var r=0;r<10000;r++)h=sha256hex(h+KODE_SALT);
+  return h;
+}
+
+const PROYEK_KODE_HASH=["01f7ec1c68755bf4f006933aab05c455fdc6adeb35bbc40e68d1083ff9b7fc10", "d37131538082090efdb304d9ff8838f65b8631ebcbf4fe093e47362151154341", "5825189277a654ba7e91122737c948c9f088cd833851310c65c03054bf5364f3"];
+
 /* ================= KUIS 5 LEVEL x 5 SOAL ================= */
 const KUIS = [
 {title:"Level 1: Pengertian & Ciri Anekdot", q:[
@@ -602,8 +670,8 @@ function saveState(){try{localStorage.setItem("anekdot_user",JSON.stringify(USER
 function todayStr(d){d=d||new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function userSlug(){return ((USER.nama||"guest")+"_"+(USER.kelas||"x")).replace(/[^A-Za-z0-9]+/g,"_").toUpperCase();}
 
-/* ================= JENDELA AKSES (07.00 - 15.00 WIB) & KUOTA MAKS 3x AKSES/HARI ================= */
-const OPEN_HOUR=7, CLOSE_HOUR=15, MAX_ACCESS_PER_DAY=3;
+/* ================= JENDELA AKSES (05.00 - 20.00 WIB) & KUOTA MAKS 3x AKSES/HARI ================= */
+const OPEN_HOUR=5, CLOSE_HOUR=20, MAX_ACCESS_PER_DAY=3;
 function getAccessRecord(){
   try{
     const r=JSON.parse(localStorage.getItem("anekdot_access")||"null");
@@ -623,10 +691,10 @@ function checkAccess(){
   const now=new Date();
   const hour=now.getHours();
   if(hour<OPEN_HOUR||hour>=CLOSE_HOUR){
-    return {ok:false,msg:"Waktu belajar hari ini sudah selesai atau belum dimulai. Media pembelajaran hanya dapat diakses pukul 07.00–15.00 WIB."};
+    return {ok:false,msg:"Waktu belajar hari ini sudah selesai atau belum dimulai. Media pembelajaran hanya dapat diakses pukul 05.00–20.00 WIB."};
   }
   if(getAccessRecord().count>=MAX_ACCESS_PER_DAY){
-    return {ok:false,msg:"Kamu sudah mencapai batas maksimal "+MAX_ACCESS_PER_DAY+" kali akses hari ini (pukul 07.00–15.00 WIB). Silakan masuk kembali besok mulai pukul 07.00."};
+    return {ok:false,msg:"Kamu sudah mencapai batas maksimal "+MAX_ACCESS_PER_DAY+" kali akses hari ini (pukul 05.00–20.00 WIB). Silakan masuk kembali besok mulai pukul 05.00."};
   }
   return {ok:true};
 }
@@ -705,7 +773,7 @@ function enterApp(){
     curMateriIdx=0;renderSubtabs();showMateri(0);
     renderRingkasanPage();renderProyekPage();
     updateLatihanProgressLabel();
-    updateNavLocks();
+    navState={};updateNavLocks();
   }
   setTimeout(()=>showProtectToast("🔒 Konten ini dilindungi. Dilarang menyalin, memfoto, atau mengambil tangkapan layar tanpa izin guru mapel."),600);
   goPage("beranda");
@@ -724,7 +792,7 @@ function openLogoutModal(){
   overlay.innerHTML=`<div style="background:#fff;border-radius:14px;max-width:360px;width:100%;padding:22px 20px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3);">
     <h3 style="margin-top:0;">Keluar dari Pembelajaran?</h3>
     ${warnBelum}
-    <p style="font-size:.85rem;color:var(--muted);">Kamu boleh masuk maksimal <b>${MAX_ACCESS_PER_DAY}x sehari</b> (pukul 07.00–15.00 WIB). Sisa kesempatan masuk setelah ini: <b>${sisa>0?sisa-1<0?0:sisa-1:0}x</b>. Jika kuota habis, kamu baru bisa masuk lagi besok pukul 07.00.</p>
+    <p style="font-size:.85rem;color:var(--muted);">Kamu boleh masuk maksimal <b>${MAX_ACCESS_PER_DAY}x sehari</b> (pukul 05.00–20.00 WIB). Sisa kesempatan masuk setelah ini: <b>${sisa>0?sisa-1<0?0:sisa-1:0}x</b>. Jika kuota habis, kamu baru bisa masuk lagi besok pukul 05.00.</p>
     <div class="btnRow" style="justify-content:center;margin-top:16px;">
       <button class="btnGhost" id="cancelLogout">Batal</button>
       <button class="btnPrimary" id="confirmLogout" style="background:var(--red);">Ya, Keluar</button>
@@ -811,7 +879,7 @@ function goPage(p){
 const KUIS_PASS=3; // skor minimal dari 5 untuk tuntas & membuka level/tahap berikutnya
 
 let materiRead=[];         // status baca penuh tiap sub-materi (array boolean per index)
-let progress={};           // status ringkasan & proyek: {ringkasanDone:bool, proyekDone:bool}
+let progress={};           // status ringkasan & proyek: {ringkasanDone:bool, proyekOk:[bool per proyek]}
 let latihanChecked=[];     // index soal Latihan yang sudah ditekan "Cek Jawaban"
 
 function loadMateriRead(){try{materiRead=JSON.parse(localStorage.getItem("anekdot_materiread_"+userSlug())||"[]");}catch(e){materiRead=[];}}
@@ -824,14 +892,15 @@ function saveLatihanChecked(){try{localStorage.setItem("anekdot_latihanchecked_"
 function materiUnlocked(i){return i===0||!!materiRead[i-1];}
 function stageMateriDone(){return MATERI.every((m,i)=>!!materiRead[i]);}
 function stageRingkasanDone(){return !!progress.ringkasanDone;}
-function stageProyekDone(){return !!progress.proyekDone;}
+function proyekOkCount(){return PROYEK.filter((p,i)=>progress.proyekOk&&progress.proyekOk[i]).length;}
+function stageProyekDone(){return proyekOkCount()>=PROYEK.length;}
 function stageKuisDone(){return kuisScores[KUIS.length-1]!==undefined&&kuisScores[KUIS.length-1]>=KUIS_PASS;}
 function stageLatihanDone(){return latihanChecked.length>=LATIHAN.length;}
 
 const PAGE_REQUIREMENT={
   ringkasan:{unlocked:stageMateriDone,msg:"Selesaikan membaca seluruh sub-materi (1–"+MATERI.length+") di menu 📖 Materi Lengkap terlebih dahulu — tekan tombol di akhir tiap materi."},
   proyek:{unlocked:stageRingkasanDone,msg:"Baca 📝 Ringkasan sampai akhir lalu tekan tombol \"Sudah Membaca Ringkasan\" terlebih dahulu."},
-  kuis:{unlocked:stageProyekDone,msg:"Pelajari 🎬 Tugas Proyek sampai akhir lalu tekan tombol \"Sudah Memahami Tugas Proyek\" terlebih dahulu."},
+  kuis:{unlocked:stageProyekDone,msg:"Kumpulkan seluruh 🎬 Tugas Proyek ke guru dan masukkan kode verifikasi dari guru terlebih dahulu."},
   latihan:{unlocked:stageKuisDone,msg:"Tuntaskan 🎯 Kuis Bertingkat sampai Level "+KUIS.length+" (skor minimal "+KUIS_PASS+"/5) terlebih dahulu."},
   evaluasi:{unlocked:stageLatihanDone,msg:"Kerjakan dan tekan \"Cek Jawaban\" pada seluruh "+LATIHAN.length+" soal ✏️ Latihan Soal terlebih dahulu."}
 };
@@ -840,11 +909,15 @@ function pageUnlocked(p){
   const r=PAGE_REQUIREMENT[p];
   return r?r.unlocked():true;
 }
+let navState={}; // status terbuka/tidaknya tiap menu (untuk notifikasi saat menu baru muncul)
+const NAV_LABEL={ringkasan:"Ringkasan",proyek:"Tugas Proyek",kuis:"Kuis Bertingkat",latihan:"Latihan Soal",evaluasi:"Evaluasi"};
 function updateNavLocks(){
   document.querySelectorAll("nav.mainnav button").forEach(b=>{
-    const ok=pageUnlocked(b.dataset.page);
-    b.classList.toggle("locked",!ok);
-    b.title=ok?"":"🔒 "+(PAGE_REQUIREMENT[b.dataset.page]?PAGE_REQUIREMENT[b.dataset.page].msg:"");
+    const p=b.dataset.page;
+    const ok=pageUnlocked(p);
+    b.style.display=ok?"":"none";   // menu yang belum boleh dibuka disembunyikan total
+    if(ok&&navState[p]===false&&NAV_LABEL[p])showProtectToast("🔓 Menu "+NAV_LABEL[p]+" sekarang sudah muncul di navigasi.");
+    navState[p]=ok;
   });
 }
 /* Helper: jalankan cb() sekali saat elemen `el` mulai terlihat di layar
@@ -933,7 +1006,7 @@ function showMateri(i){
       materiRead[i]=true;saveMateriRead();
       updateNavLocks();
       if(isLast){
-        showProtectToast("🎉 Semua materi selesai dibaca! Menu Ringkasan sudah terbuka.");
+        showProtectToast("🎉 Semua materi selesai dibaca! Menu Ringkasan sudah muncul.");
         showMateri(i);
       }else{
         showProtectToast("✅ Materi "+(i+1)+" ditandai selesai. Materi "+(i+2)+" terbuka.");
@@ -955,7 +1028,7 @@ function renderRingkasanPage(){
     isDone:stageRingkasanDone,
     label:"✅ Sudah Membaca Ringkasan Sampai Selesai",
     onConfirm:()=>{progress.ringkasanDone=true;saveProgress();},
-    toast:"✅ Ringkasan ditandai selesai. Menu Tugas Proyek sudah terbuka."
+    toast:"✅ Ringkasan ditandai selesai. Menu Tugas Proyek sudah muncul."
   });
 }
 renderRingkasanPage();
@@ -963,22 +1036,44 @@ renderRingkasanPage();
 /* ================= RENDER: PROYEK ================= */
 const proyekContentEl=document.getElementById("proyekContent");
 function renderProyekPage(){
-  proyekContentEl.innerHTML=PROYEK.map(p=>`
+  const okN=proyekOkCount();
+  const cards=PROYEK.map((p,i)=>{
+    const ok=!!(progress.proyekOk&&progress.proyekOk[i]);
+    const check=ok
+      ?`<div class="proyekCheck done"><p class="pcStatus">✅ Proyek ${i+1} sudah dikumpulkan &amp; diverifikasi guru.</p></div>`
+      :`<div class="proyekCheck">
+          <p class="pcStatus">⬜ Belum terverifikasi. Kumpulkan hasil proyek ke guru, lalu masukkan <b>kode verifikasi</b> yang diberikan guru.</p>
+          <div class="pcRow"><input type="text" id="pkInput${i}" placeholder="Kode dari guru" autocomplete="off" maxlength="20">
+          <button class="btnPrimary pkBtn" data-i="${i}">Verifikasi</button></div>
+          <div class="pcErr" id="pkErr${i}"></div>
+        </div>`;
+    return `
  <div class="card proyekCard">
-   <h3>${p.judul}</h3>
+   <h3>${ok?"✅ ":"⬜ "}${p.judul}</h3>
    <div class="proyekMeta">${p.tag.map(t=>`<span class="tag">${t}</span>`).join("")}</div>
    <p>${p.desc}</p>
    <h4 style="font-size:.85rem;color:var(--navy);margin-bottom:6px;">Langkah Kerja:</h4>
    <ol style="font-size:.85rem;">${p.langkah.map(l=>`<li>${l}</li>`).join("")}</ol>
    <h4 style="font-size:.85rem;color:var(--navy);margin-bottom:6px;">Kriteria Penilaian:</h4>
    <ul style="font-size:.85rem;">${p.rubrik.map(r=>`<li>${r}</li>`).join("")}</ul>
- </div>`).join("");
-  attachStageGate(proyekContentEl,{
-    isDone:stageProyekDone,
-    label:"✅ Sudah Memahami Semua Tugas Proyek",
-    onConfirm:()=>{progress.proyekDone=true;saveProgress();},
-    toast:"✅ Tugas Proyek ditandai selesai. Menu Kuis Bertingkat sudah terbuka."
-  });
+   ${check}
+ </div>`;
+  }).join("");
+  proyekContentEl.innerHTML=`<div class="card"><p style="margin:0;font-size:.88rem;"><b>Progres Tugas Proyek: ${okN}/${PROYEK.length} terverifikasi.</b>
+    ${okN>=PROYEK.length?"🎉 Semua proyek selesai — menu Kuis Bertingkat sudah muncul.":"Menu Kuis Bertingkat akan muncul setelah ketiga proyek terverifikasi guru."}</p></div>`+cards;
+  proyekContentEl.querySelectorAll(".pkBtn").forEach(btn=>btn.addEventListener("click",()=>{
+    const i=+btn.dataset.i;
+    const inp=document.getElementById("pkInput"+i);
+    const err=document.getElementById("pkErr"+i);
+    const val=inp.value.trim().toLowerCase();
+    if(!val){err.textContent="Masukkan kode dari guru terlebih dahulu.";return;}
+    if(hashKode(val,i)!==PROYEK_KODE_HASH[i]){err.textContent="Kode salah. Pastikan proyek sudah dikumpulkan dan kode benar dari guru.";return;}
+    if(!progress.proyekOk)progress.proyekOk=[];
+    progress.proyekOk[i]=true;saveProgress();
+    renderProyekPage();
+    updateNavLocks();
+    showProtectToast("✅ Proyek "+(i+1)+" terverifikasi guru ("+proyekOkCount()+"/"+PROYEK.length+").");
+  }));
 }
 renderProyekPage();
 
@@ -1292,6 +1387,7 @@ function openResetModal(){
     curMateriIdx=0;renderSubtabs();showMateri(0);
     renderRingkasanPage();renderProyekPage();
     updateLatihanProgressLabel();
+    navState={};
     latihanContent.querySelectorAll(".lFeedback").forEach(f=>{f.style.display="none";f.innerHTML="";});
     latihanContent.querySelectorAll(".opt").forEach(o=>o.classList.remove("correct","wrong"));
     latihanContent.querySelectorAll("input[type=radio]").forEach(r=>r.checked=false);
@@ -1302,6 +1398,34 @@ function openResetModal(){
   });
 }
 document.querySelector('nav.mainnav button[data-page="rekap"]').addEventListener("click",renderRekap);
+
+/* ================= PANEL GURU (tersembunyi, buka dengan #guru di akhir tautan) ================= */
+const GURU_PASS_HASH="62bf4b3b99eb253d5de7d656d97c8db5dd76e19703ba8d696b4ebe05aa47a33d";
+(function(){
+  const $=id=>document.getElementById(id);
+  function tutup(){$("guruPanel").style.display="none";$("guruIsi").style.display="none";$("guruLogin").style.display="block";$("guruPass").value="";
+    if(location.hash==="#guru")history.replaceState(null,"",location.pathname+location.search);}
+  function cek(){
+    if(location.hash==="#guru"){$("guruPanel").style.display="block";setTimeout(()=>$("guruPass").focus(),50);}
+  }
+  $("guruMasuk").addEventListener("click",()=>{
+    if(hashKode($("guruPass").value,99)!==GURU_PASS_HASH){$("guruErr").textContent="Password guru salah.";return;}
+    $("guruErr").textContent="";$("guruLogin").style.display="none";$("guruIsi").style.display="block";
+  });
+  $("guruPass").addEventListener("keydown",e=>{if(e.key==="Enter")$("guruMasuk").click();});
+  $("guruBuat").addEventListener("click",()=>{
+    const arr=[0,1,2].map(i=>hashKode($("gk"+i).value,i));
+    $("guruOut").value="const PROYEK_KODE_HASH="+JSON.stringify(arr)+";";
+  });
+  $("guruSalin").addEventListener("click",()=>{
+    const t=$("guruOut");t.select();
+    try{document.execCommand("copy");showProtectToast("✅ Tersalin.");}catch(e){}
+  });
+  $("guruTutup").addEventListener("click",tutup);
+  $("guruTutup2").addEventListener("click",tutup);
+  window.addEventListener("hashchange",cek);
+  cek();
+})();
 
 /* ================= INIT ================= */
 loadState();
