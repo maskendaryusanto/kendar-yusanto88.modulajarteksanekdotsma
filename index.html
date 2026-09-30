@@ -775,7 +775,12 @@ setInterval(()=>{
 /* ================= LOGIN LOGIC ================= */
 let kuisInProgress=false, evalInProgress=false;
 const fNama=document.getElementById("fNama");
-fNama.addEventListener("input",e=>{e.target.value=e.target.value.toUpperCase();});
+/* Sebelumnya value di-uppercase ulang pada SETIAP keystroke, yang membuat kursor/IME
+   (terutama Android + prediksi teks) terasa berat saat mengetik. Sekarang tampilan huruf
+   besar cukup lewat CSS (text-transform), dan value asli baru dirapikan saat fokus lepas
+   atau saat form disubmit, sehingga tidak ada lagi penulisan ulang value per huruf. */
+fNama.style.textTransform="uppercase";
+fNama.addEventListener("blur",e=>{e.target.value=e.target.value.toUpperCase();});
 document.getElementById("togglePw").addEventListener("click",()=>{
   const p=document.getElementById("fPass");
   p.type=p.type==="password"?"text":"password";
@@ -792,7 +797,7 @@ const KELAS_PASSWORD={
 document.getElementById("loginForm").addEventListener("submit",e=>{
   e.preventDefault();
   if(!applyAccessGate())return;
-  const nama=fNama.value.trim();
+  const nama=fNama.value.trim().toUpperCase();
   const kelas=document.getElementById("fKelas").value;
   const pass=document.getElementById("fPass").value;
   const err=document.getElementById("loginErr");
@@ -915,12 +920,24 @@ window.addEventListener("pageshow",hidePrivacyBlur);
   document.addEventListener(ev,()=>{if(!document.hidden)hidePrivacyBlur();},true));
 
 /* Tinggi header bisa >60px (layar sempit/notch); sesuaikan agar menu tidak tertutup header */
+let _hdrRaf=null;
 function syncHeaderHeight(){
-  const h=document.querySelector("header.topbar");
-  if(h&&h.offsetHeight)document.documentElement.style.setProperty("--hdrH",h.offsetHeight+"px");
+  if(_hdrRaf)cancelAnimationFrame(_hdrRaf);
+  _hdrRaf=requestAnimationFrame(()=>{
+    _hdrRaf=null;
+    const appEl=document.getElementById("app");
+    if(!appEl||appEl.style.display==="none")return; // layar login: header tersembunyi, tak perlu dihitung
+    const h=document.querySelector("header.topbar");
+    if(!h)return;
+    const newH=h.offsetHeight;
+    if(newH){
+      const cur=parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hdrH"))||0;
+      if(Math.abs(newH-cur)>=1)document.documentElement.style.setProperty("--hdrH",newH+"px");
+    }
+  });
 }
-window.addEventListener("resize",syncHeaderHeight);
-window.addEventListener("orientationchange",syncHeaderHeight);
+window.addEventListener("resize",syncHeaderHeight,{passive:true});
+window.addEventListener("orientationchange",syncHeaderHeight,{passive:true});
 /* ================= NAV ================= */
 document.querySelectorAll("nav.mainnav button").forEach(b=>{
   b.addEventListener("click",()=>{
@@ -1394,18 +1411,35 @@ function gradeEval(){
 updateEvalIntro();
 renderEval();
 
-/* ================= REKAP NILAI SISWA (khusus milik sendiri, tanpa unduh) ================= */
-let dbCap=null;
-(async()=>{ try{dbCap=await claude.use("db");}catch(e){dbCap=null;} })();
+/* ================= REKAP NILAI SISWA + SINKRON KE GOOGLE SPREADSHEET =================
+   Catatan migrasi: sebelumnya kode ini memanggil claude.use("db"), sebuah kapabilitas
+   yang hanya tersedia bila halaman dijalankan di dalam platform Claude. Saat file ini
+   dibuka sebagai HTML biasa (di hosting sekolah, Google Sites, dsb.), pemanggilan itu
+   SELALU gagal (claude tidak terdefinisi) sehingga setiap nilai diam-diam hanya
+   tersimpan di localStorage perangkat siswa masing-masing dan guru tidak pernah bisa
+   merekapnya di satu tempat. Sekarang tiap nilai baru juga dikirim ke Google Spreadsheet
+   lewat Google Apps Script, sehingga guru bisa membuka satu spreadsheet berisi rekap
+   seluruh siswa. localStorage tetap dipakai sebagai cadangan offline dan sumber data
+   untuk halaman "Rekap Nilai Siswa" milik siswa itu sendiri. */
+const GAS_WEBHOOK_URL="https://script.google.com/macros/s/AKfycbyE06RWl8TNzk7sr7_xZffJ2ags6WV-CrJXB5KWOtVgjBoL4mEGSfV3hOBOogasDdji/exec";
+async function kirimKeSpreadsheet(row){
+  if(!GAS_WEBHOOK_URL||GAS_WEBHOOK_URL.indexOf("TEMPEL_URL")===0)return; // belum disetel guru, lewati diam-diam
+  try{
+    await fetch(GAS_WEBHOOK_URL,{
+      method:"POST",
+      mode:"no-cors", // Apps Script Web App tidak mengirim header CORS; no-cors cukup untuk mengirim (fire-and-forget)
+      headers:{"Content-Type":"text/plain;charset=utf-8"}, // hindari preflight OPTIONS yang ditolak Apps Script
+      body:JSON.stringify(row)
+    });
+  }catch(e){/* offline / jaringan gagal: nilai tetap aman di localStorage, akan tersimpan lokal */}
+}
 async function pushRekap(data){
   const row={nama:USER.nama,kelas:USER.kelas,jenis:data.jenis,skor:data.skor,catatan:data.catatan||"",waktu:new Date().toISOString()};
-  try{if(!dbCap)dbCap=await claude.use("db");
-    if(dbCap)await dbCap.collection("rekap_nilai").add(row);
-  }catch(e){/* gagal simpan ke penyimpanan bersama, data tetap ada di localStorage siswa */}
   try{
     const arr=JSON.parse(localStorage.getItem("anekdot_rekap_lokal")||"[]");
     arr.push(row);localStorage.setItem("anekdot_rekap_lokal",JSON.stringify(arr));
   }catch(e){}
+  kirimKeSpreadsheet(row); // tidak di-await: supaya UI (skor muncul dsb.) tidak ikut menunggu jaringan
 }
 async function renderRekap(){
   const statusEl=document.getElementById("rekapStatus");
@@ -1413,17 +1447,8 @@ async function renderRekap(){
   statusEl.innerHTML=`<p style="font-size:.85rem;margin:0;">Memuat progres nilaimu…</p>`;
   let rows=[];
   try{
-    if(!dbCap)dbCap=await claude.use("db");
-    if(dbCap){
-      const snap=await dbCap.collection("rekap_nilai").where("nama","==",USER.nama).where("kelas","==",USER.kelas).get();
-      rows=snap.docs.map(d=>d.data());
-    }
-  }catch(e){}
-  if(rows.length===0){
-    try{
-      rows=JSON.parse(localStorage.getItem("anekdot_rekap_lokal")||"[]").filter(r=>r.nama===USER.nama&&r.kelas===USER.kelas);
-    }catch(e){rows=[];}
-  }
+    rows=JSON.parse(localStorage.getItem("anekdot_rekap_lokal")||"[]").filter(r=>r.nama===USER.nama&&r.kelas===USER.kelas);
+  }catch(e){rows=[];}
   rows.sort((a,b)=>new Date(b.waktu)-new Date(a.waktu));
   statusEl.innerHTML=`<p style="font-size:.85rem;margin:0;">Halaman ini hanya menampilkan progres nilai milik <b>${USER.nama} (${USER.kelas})</b> sendiri. Tunjukkan layar ini kepada Bapak/Ibu guru mapel bila diminta untuk pengecekan nilai.</p>
     <div class="btnRow"><button class="btnGhost" id="rekapRefresh">🔄 Muat Ulang</button><button class="btnGhost" id="rekapReset" style="color:var(--red);border-color:var(--red);">🗑️ Reset Progres Saya</button></div>`;
