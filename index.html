@@ -33,9 +33,9 @@ a{color:var(--blue);}
   background:linear-gradient(160deg,var(--navy) 0%,var(--navy2) 55%,#0d2e5c 100%);
   padding:32px 16px;position:relative;overflow:hidden;}
 #loginScreen::before{content:"";position:absolute;width:520px;height:520px;border-radius:50%;
-  background:radial-gradient(circle,rgba(255,199,44,.14),transparent 70%);top:-160px;right:-160px;}
+  background:radial-gradient(circle,rgba(255,199,44,.14),transparent 70%);top:-160px;right:-160px;pointer-events:none;}
 #loginScreen::after{content:"";position:absolute;width:420px;height:420px;border-radius:50%;
-  background:radial-gradient(circle,rgba(28,159,232,.18),transparent 70%);bottom:-140px;left:-140px;}
+  background:radial-gradient(circle,rgba(28,159,232,.18),transparent 70%);bottom:-140px;left:-140px;pointer-events:none;}
 .loginCard{position:relative;background:var(--card);border-radius:18px;max-width:400px;width:100%;
   padding:34px 30px 28px;box-shadow:0 25px 60px rgba(0,0,0,.35);border-top:6px solid var(--yellow);}
 .loginCard .logoWrap{display:flex;justify-content:center;margin-bottom:10px;}
@@ -46,10 +46,11 @@ a{color:var(--blue);}
   font-size:.78rem;letter-spacing:.03em;padding:6px 10px;border-radius:8px;margin-bottom:20px;}
 label{display:block;font-weight:600;font-size:.82rem;color:var(--navy);margin:14px 0 6px;}
 input[type=text],input[type=password],select{
-  width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;font-size:.95rem;
+  width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;
   background:#F8FAFD;color:var(--text);transition:border .15s;}
 input:focus,select:focus{outline:none;border-color:var(--blue);background:#fff;}
 .pwWrap{position:relative;}
+.pwWrap input{padding-right:62px;}
 .pwWrap button{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;
   border:none;color:var(--muted);font-size:.75rem;font-weight:600;}
 .loginBtn{width:100%;margin-top:20px;background:var(--yellow);color:var(--navy);border:none;
@@ -236,7 +237,7 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
     <div class="matapel">📘 MATERI: TEKS ANEKDOT — KELAS X</div>
     <form id="loginForm">
       <label for="fNama">Nama Lengkap</label>
-      <input type="text" id="fNama" placeholder="TULIS NAMA (otomatis huruf kapital)" autocomplete="off" required>
+      <input type="text" id="fNama" placeholder="TULIS NAMA (otomatis huruf kapital)" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" required>
       <label for="fKelas">Kelas</label>
       <select id="fKelas" required>
         <option value="">— Pilih Kelas —</option>
@@ -245,7 +246,7 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
       </select>
       <label for="fPass">Password</label>
       <div class="pwWrap">
-        <input type="password" id="fPass" placeholder="Masukkan password" autocomplete="off" required>
+        <input type="password" id="fPass" placeholder="Masukkan password" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" required>
         <button type="button" id="togglePw">LIHAT</button>
       </div>
       <button type="submit" class="loginBtn">Masuk ke Pembelajaran</button>
@@ -372,7 +373,7 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
     <h2 style="margin:0 0 6px;color:#1a2b4a;">🔑 Panel Guru</h2>
     <div id="guruLogin">
       <p style="font-size:.88rem;color:#555;">Masukkan password guru.</p>
-      <input type="password" id="guruPass" placeholder="Password guru" style="width:100%;padding:10px 12px;border:1.5px solid #ccd;border-radius:9px;box-sizing:border-box;">
+      <input type="password" id="guruPass" placeholder="Password guru" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%;padding:10px 12px;border:1.5px solid #ccd;border-radius:9px;box-sizing:border-box;font-size:16px;">
       <div id="guruErr" style="color:#c0392b;font-size:.82rem;margin:6px 0;"></div>
       <button id="guruMasuk" class="btnPrimary">Masuk</button>
       <button id="guruTutup" class="btnGhost" style="margin-left:6px;">Tutup</button>
@@ -607,7 +608,7 @@ function renderGateBox(host,kind,judul,onOk){
   }
   host.innerHTML=`<div class="card"><h4 style="margin:0 0 6px;color:var(--navy);">🔐 ${judul}</h4>
     <p style="font-size:.83rem;margin:0 0 10px;">Minta <b>kode buka</b> kepada guru. Menu ini tidak akan muncul sebelum kode yang benar dimasukkan.</p>
-    <div class="pcRow" style="display:flex;gap:8px;flex-wrap:wrap;"><input type="text" class="gateInput" placeholder="Kode buka dari guru" autocomplete="off" maxlength="20"
+    <div class="pcRow" style="display:flex;gap:8px;flex-wrap:wrap;"><input type="text" class="gateInput" placeholder="Kode buka dari guru" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="20"
       style="flex:1;min-width:140px;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font-size:.9rem;">
     <button class="btnPrimary gateBtn">Buka</button></div>
     <div class="gateErr" style="color:var(--red);font-size:.8rem;margin-top:6px;"></div></div>`;
@@ -775,12 +776,7 @@ setInterval(()=>{
 /* ================= LOGIN LOGIC ================= */
 let kuisInProgress=false, evalInProgress=false;
 const fNama=document.getElementById("fNama");
-/* Sebelumnya value di-uppercase ulang pada SETIAP keystroke, yang membuat kursor/IME
-   (terutama Android + prediksi teks) terasa berat saat mengetik. Sekarang tampilan huruf
-   besar cukup lewat CSS (text-transform), dan value asli baru dirapikan saat fokus lepas
-   atau saat form disubmit, sehingga tidak ada lagi penulisan ulang value per huruf. */
-fNama.style.textTransform="uppercase";
-fNama.addEventListener("blur",e=>{e.target.value=e.target.value.toUpperCase();});
+fNama.addEventListener("input",e=>{e.target.value=e.target.value.toUpperCase();});
 document.getElementById("togglePw").addEventListener("click",()=>{
   const p=document.getElementById("fPass");
   p.type=p.type==="password"?"text":"password";
@@ -794,15 +790,19 @@ const KELAS_PASSWORD={
   "X-5":"Belajar05",
   "X-6":"presentasikan67"
 };
+/* Dibandingkan tanpa peduli besar/kecil huruf & spasi di ujung: sebagian HP
+   otomatis mengapitalkan huruf pertama kolom password, jadi harus tetap diterima. */
+function normPass(x){return String(x||"").trim().toLowerCase();}
+const KELAS_PASSWORD_NORM=Object.fromEntries(Object.entries(KELAS_PASSWORD).map(([k,v])=>[k,normPass(v)]));
 document.getElementById("loginForm").addEventListener("submit",e=>{
   e.preventDefault();
   if(!applyAccessGate())return;
-  const nama=fNama.value.trim().toUpperCase();
+  const nama=fNama.value.trim();
   const kelas=document.getElementById("fKelas").value;
   const pass=document.getElementById("fPass").value;
   const err=document.getElementById("loginErr");
   if(!nama||!kelas){err.textContent="Lengkapi nama dan kelas terlebih dahulu.";return;}
-  if(pass!==KELAS_PASSWORD[kelas]){err.textContent="Password salah untuk kelas "+kelas+". Silakan coba lagi.";return;}
+  if(normPass(pass)!==KELAS_PASSWORD_NORM[kelas]){err.textContent="Password salah untuk kelas "+kelas+". Silakan coba lagi.";return;}
   err.textContent="";
   USER={nama,kelas};saveState();
   const usedCount=useAccessQuota();
@@ -920,24 +920,12 @@ window.addEventListener("pageshow",hidePrivacyBlur);
   document.addEventListener(ev,()=>{if(!document.hidden)hidePrivacyBlur();},true));
 
 /* Tinggi header bisa >60px (layar sempit/notch); sesuaikan agar menu tidak tertutup header */
-let _hdrRaf=null;
 function syncHeaderHeight(){
-  if(_hdrRaf)cancelAnimationFrame(_hdrRaf);
-  _hdrRaf=requestAnimationFrame(()=>{
-    _hdrRaf=null;
-    const appEl=document.getElementById("app");
-    if(!appEl||appEl.style.display==="none")return; // layar login: header tersembunyi, tak perlu dihitung
-    const h=document.querySelector("header.topbar");
-    if(!h)return;
-    const newH=h.offsetHeight;
-    if(newH){
-      const cur=parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hdrH"))||0;
-      if(Math.abs(newH-cur)>=1)document.documentElement.style.setProperty("--hdrH",newH+"px");
-    }
-  });
+  const h=document.querySelector("header.topbar");
+  if(h&&h.offsetHeight)document.documentElement.style.setProperty("--hdrH",h.offsetHeight+"px");
 }
-window.addEventListener("resize",syncHeaderHeight,{passive:true});
-window.addEventListener("orientationchange",syncHeaderHeight,{passive:true});
+window.addEventListener("resize",syncHeaderHeight);
+window.addEventListener("orientationchange",syncHeaderHeight);
 /* ================= NAV ================= */
 document.querySelectorAll("nav.mainnav button").forEach(b=>{
   b.addEventListener("click",()=>{
@@ -1132,7 +1120,7 @@ function renderProyekPage(){
       ?`<div class="proyekCheck done"><p class="pcStatus">✅ Proyek ${i+1} sudah dikumpulkan &amp; diverifikasi guru.</p></div>`
       :`<div class="proyekCheck">
           <p class="pcStatus">⬜ Belum terverifikasi. Kumpulkan hasil proyek ke guru, lalu masukkan <b>kode verifikasi</b> yang diberikan guru.</p>
-          <div class="pcRow"><input type="text" id="pkInput${i}" placeholder="Kode dari guru" autocomplete="off" maxlength="20">
+          <div class="pcRow"><input type="text" id="pkInput${i}" placeholder="Kode dari guru" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="20">
           <button class="btnPrimary pkBtn" data-i="${i}">Verifikasi</button></div>
           <div class="pcErr" id="pkErr${i}"></div>
         </div>`;
@@ -1411,35 +1399,18 @@ function gradeEval(){
 updateEvalIntro();
 renderEval();
 
-/* ================= REKAP NILAI SISWA + SINKRON KE GOOGLE SPREADSHEET =================
-   Catatan migrasi: sebelumnya kode ini memanggil claude.use("db"), sebuah kapabilitas
-   yang hanya tersedia bila halaman dijalankan di dalam platform Claude. Saat file ini
-   dibuka sebagai HTML biasa (di hosting sekolah, Google Sites, dsb.), pemanggilan itu
-   SELALU gagal (claude tidak terdefinisi) sehingga setiap nilai diam-diam hanya
-   tersimpan di localStorage perangkat siswa masing-masing dan guru tidak pernah bisa
-   merekapnya di satu tempat. Sekarang tiap nilai baru juga dikirim ke Google Spreadsheet
-   lewat Google Apps Script, sehingga guru bisa membuka satu spreadsheet berisi rekap
-   seluruh siswa. localStorage tetap dipakai sebagai cadangan offline dan sumber data
-   untuk halaman "Rekap Nilai Siswa" milik siswa itu sendiri. */
-const GAS_WEBHOOK_URL="https://script.google.com/macros/s/AKfycbyE06RWl8TNzk7sr7_xZffJ2ags6WV-CrJXB5KWOtVgjBoL4mEGSfV3hOBOogasDdji/exec";
-async function kirimKeSpreadsheet(row){
-  if(!GAS_WEBHOOK_URL||GAS_WEBHOOK_URL.indexOf("TEMPEL_URL")===0)return; // belum disetel guru, lewati diam-diam
-  try{
-    await fetch(GAS_WEBHOOK_URL,{
-      method:"POST",
-      mode:"no-cors", // Apps Script Web App tidak mengirim header CORS; no-cors cukup untuk mengirim (fire-and-forget)
-      headers:{"Content-Type":"text/plain;charset=utf-8"}, // hindari preflight OPTIONS yang ditolak Apps Script
-      body:JSON.stringify(row)
-    });
-  }catch(e){/* offline / jaringan gagal: nilai tetap aman di localStorage, akan tersimpan lokal */}
-}
+/* ================= REKAP NILAI SISWA (khusus milik sendiri, tanpa unduh) ================= */
+let dbCap=null;
+(async()=>{ try{dbCap=await claude.use("db");}catch(e){dbCap=null;} })();
 async function pushRekap(data){
   const row={nama:USER.nama,kelas:USER.kelas,jenis:data.jenis,skor:data.skor,catatan:data.catatan||"",waktu:new Date().toISOString()};
+  try{if(!dbCap)dbCap=await claude.use("db");
+    if(dbCap)await dbCap.collection("rekap_nilai").add(row);
+  }catch(e){/* gagal simpan ke penyimpanan bersama, data tetap ada di localStorage siswa */}
   try{
     const arr=JSON.parse(localStorage.getItem("anekdot_rekap_lokal")||"[]");
     arr.push(row);localStorage.setItem("anekdot_rekap_lokal",JSON.stringify(arr));
   }catch(e){}
-  kirimKeSpreadsheet(row); // tidak di-await: supaya UI (skor muncul dsb.) tidak ikut menunggu jaringan
 }
 async function renderRekap(){
   const statusEl=document.getElementById("rekapStatus");
@@ -1447,8 +1418,17 @@ async function renderRekap(){
   statusEl.innerHTML=`<p style="font-size:.85rem;margin:0;">Memuat progres nilaimu…</p>`;
   let rows=[];
   try{
-    rows=JSON.parse(localStorage.getItem("anekdot_rekap_lokal")||"[]").filter(r=>r.nama===USER.nama&&r.kelas===USER.kelas);
-  }catch(e){rows=[];}
+    if(!dbCap)dbCap=await claude.use("db");
+    if(dbCap){
+      const snap=await dbCap.collection("rekap_nilai").where("nama","==",USER.nama).where("kelas","==",USER.kelas).get();
+      rows=snap.docs.map(d=>d.data());
+    }
+  }catch(e){}
+  if(rows.length===0){
+    try{
+      rows=JSON.parse(localStorage.getItem("anekdot_rekap_lokal")||"[]").filter(r=>r.nama===USER.nama&&r.kelas===USER.kelas);
+    }catch(e){rows=[];}
+  }
   rows.sort((a,b)=>new Date(b.waktu)-new Date(a.waktu));
   statusEl.innerHTML=`<p style="font-size:.85rem;margin:0;">Halaman ini hanya menampilkan progres nilai milik <b>${USER.nama} (${USER.kelas})</b> sendiri. Tunjukkan layar ini kepada Bapak/Ibu guru mapel bila diminta untuk pengecekan nilai.</p>
     <div class="btnRow"><button class="btnGhost" id="rekapRefresh">🔄 Muat Ulang</button><button class="btnGhost" id="rekapReset" style="color:var(--red);border-color:var(--red);">🗑️ Reset Progres Saya</button></div>`;
