@@ -650,6 +650,39 @@ setInterval(()=>{
 
 /* ================= LOGIN LOGIC ================= */
 let kuisInProgress=false, evalInProgress=false;
+const PASS_KELAS={"X-1":"bacalah01","X-2":"simaklah2","X-3":"Dengarlahx3","X-4":"tulislah44","X-5":"Belajar05","X-6":"presentasikan67"};
+const KODE_MENU="binx123456";
+function openMenuCodeModal(){
+  if(document.getElementById("menuCodeOverlay"))return;
+  const ov=document.createElement("div");
+  ov.id="menuCodeOverlay";
+  ov.style.cssText="position:fixed;inset:0;background:rgba(11,37,69,.96);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;";
+  ov.innerHTML=`<div style="background:#fff;border-radius:14px;max-width:360px;width:100%;padding:24px 20px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.4);border-top:6px solid var(--yellow);">
+    <h3 style="margin-top:0;">🔑 Kode Buka Menu</h3>
+    <p style="font-size:.85rem;color:var(--muted);">Masukkan kode buka menu dari guru untuk mengakses materi, kuis, dan evaluasi.</p>
+    <input type="password" id="menuCodeInput" placeholder="Kode buka menu" autocomplete="off">
+    <div id="menuCodeErr" style="color:var(--red);font-size:.8rem;font-weight:600;min-height:1.2em;margin-top:8px;"></div>
+    <div class="btnRow" style="justify-content:center;">
+      <button class="btnGhost" id="menuCodeBack">Kembali</button>
+      <button class="btnPrimary" id="menuCodeOk">Buka Menu</button>
+    </div></div>`;
+  document.body.appendChild(ov);
+  const inp=document.getElementById("menuCodeInput");
+  function cek(){
+    if(inp.value===KODE_MENU){ov.remove();}
+    else{document.getElementById("menuCodeErr").textContent="Kode salah. Tanyakan kode yang benar kepada guru mapel.";}
+  }
+  document.getElementById("menuCodeOk").addEventListener("click",cek);
+  inp.addEventListener("keydown",e=>{if(e.key==="Enter")cek();});
+  document.getElementById("menuCodeBack").addEventListener("click",()=>{
+    ov.remove();
+    USER={nama:"",kelas:""};try{localStorage.removeItem("anekdot_user");}catch(e){}
+    document.getElementById("app").style.display="none";
+    document.getElementById("loginForm").reset();
+    document.getElementById("loginScreen").style.display="flex";
+  });
+  setTimeout(()=>inp.focus(),100);
+}
 const fNama=document.getElementById("fNama");
 fNama.addEventListener("input",e=>{e.target.value=e.target.value.toUpperCase();});
 document.getElementById("togglePw").addEventListener("click",()=>{
@@ -664,7 +697,7 @@ document.getElementById("loginForm").addEventListener("submit",e=>{
   const pass=document.getElementById("fPass").value;
   const err=document.getElementById("loginErr");
   if(!nama||!kelas){err.textContent="Lengkapi nama dan kelas terlebih dahulu.";return;}
-  if(pass!=="binx123456"){err.textContent="Password salah. Silakan coba lagi.";return;}
+  if(pass!==PASS_KELAS[kelas]){err.textContent="Password salah untuk kelas "+kelas+". Silakan coba lagi.";return;}
   err.textContent="";
   USER={nama,kelas};saveState();
   const usedCount=useAccessQuota();
@@ -684,6 +717,7 @@ function enterApp(){
   if(typeof updateEvalIntro==="function"){updateEvalIntro();renderEval();}
   setTimeout(()=>showProtectToast("🔒 Konten ini dilindungi. Dilarang menyalin, memfoto, atau mengambil tangkapan layar tanpa izin guru mapel."),600);
   goPage("beranda");
+  openMenuCodeModal();
 }
 document.getElementById("logoutBtn").addEventListener("click",()=>{
   openLogoutModal();
