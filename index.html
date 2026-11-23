@@ -195,6 +195,10 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
   padding:10px 18px;border-radius:20px;font-size:.78rem;font-weight:600;z-index:10000;box-shadow:0 6px 20px rgba(0,0,0,.3);
   opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center;}
 #protectToast.show{opacity:1;}
+nav.mainnav button[data-locked="1"]::after{content:" 🔒";font-size:.75rem;}
+.lockCard{border-top:5px solid var(--yellow-dark);}
+.lockCard input{max-width:260px;margin-top:6px;}
+.markBar{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line);}
 </style>
 </head>
 <body>
@@ -650,37 +654,49 @@ setInterval(()=>{
 
 /* ================= LOGIN LOGIC ================= */
 let kuisInProgress=false, evalInProgress=false;
-const PASS_KELAS={"X-1":"bacalah01","X-2":"simaklah2","X-3":"Dengarlahx3","X-4":"tulislah44","X-5":"Belajar05","X-6":"presentasikan67"};
-const KODE_MENU="binx123456";
-function openMenuCodeModal(){
-  if(document.getElementById("menuCodeOverlay"))return;
-  const ov=document.createElement("div");
-  ov.id="menuCodeOverlay";
-  ov.style.cssText="position:fixed;inset:0;background:rgba(11,37,69,.96);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;";
-  ov.innerHTML=`<div style="background:#fff;border-radius:14px;max-width:360px;width:100%;padding:24px 20px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.4);border-top:6px solid var(--yellow);">
-    <h3 style="margin-top:0;">🔑 Kode Buka Menu</h3>
-    <p style="font-size:.85rem;color:var(--muted);">Masukkan kode buka menu dari guru untuk mengakses materi, kuis, dan evaluasi.</p>
-    <input type="password" id="menuCodeInput" placeholder="Kode buka menu" autocomplete="off">
-    <div id="menuCodeErr" style="color:var(--red);font-size:.8rem;font-weight:600;min-height:1.2em;margin-top:8px;"></div>
-    <div class="btnRow" style="justify-content:center;">
-      <button class="btnGhost" id="menuCodeBack">Kembali</button>
-      <button class="btnPrimary" id="menuCodeOk">Buka Menu</button>
-    </div></div>`;
-  document.body.appendChild(ov);
-  const inp=document.getElementById("menuCodeInput");
-  function cek(){
-    if(inp.value===KODE_MENU){ov.remove();}
-    else{document.getElementById("menuCodeErr").textContent="Kode salah. Tanyakan kode yang benar kepada guru mapel.";}
-  }
-  document.getElementById("menuCodeOk").addEventListener("click",cek);
-  inp.addEventListener("keydown",e=>{if(e.key==="Enter")cek();});
-  document.getElementById("menuCodeBack").addEventListener("click",()=>{
-    ov.remove();
-    USER={nama:"",kelas:""};try{localStorage.removeItem("anekdot_user");}catch(e){}
-    document.getElementById("app").style.display="none";
-    document.getElementById("loginForm").reset();
-    document.getElementById("loginScreen").style.display="flex";
+/* ===== kode akses (disamarkan dengan hash, tidak tersimpan sebagai teks biasa) ===== */
+function cyrb53(str,seed=0){let h1=0xdeadbeef^seed,h2=0x41c6ce57^seed;for(let i=0,ch;i<str.length;i++){ch=str.charCodeAt(i);h1=Math.imul(h1^ch,2654435761);h2=Math.imul(h2^ch,1597334677);}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return 4294967296*(2097151&h2)+(h1>>>0);}
+const SALT="sman1pro-anekdot-26";
+function H(k,j,v){return cyrb53(SALT+"|"+k+"|"+j+"|"+v).toString(36);}
+const CODE_H={"X-1":{"login":"27d3nl2k3fx","kuis":"25xw113vvgg","eval":"25d3flz3uu9","p1":"1luhe9iz9eq","p2":"2fy9agded2l","p3":"1zanp37gwpi"},"X-2":{"login":"16eackj72ow","kuis":"258ulzdml9q","eval":"279m137fh63","p1":"6dggjcdozo","p2":"v3ad0mnnnd","p3":"pvxihc8vnn"},"X-3":{"login":"1sak3mll7av","kuis":"2ar1n1k8yib","eval":"yaz2oyaw2n","p1":"1xpxjpkva51","p2":"28hyj9e6t0h","p3":"1q65zodol9e"},"X-4":{"login":"m7nn5tzgdc","kuis":"20nmj799b9p","eval":"t31osbckzl","p1":"17oo0o02dta","p2":"1esjxuc2kcc","p3":"1lt1zeljbq5"},"X-5":{"login":"1daka2fsfnw","kuis":"28umrdbjjzi","eval":"1mueeglxsuf","p1":"k4hpev1pe8","p2":"6ix8a3ol6x","p3":"2fk4cq3i5ye"},"X-6":{"login":"25u3tgugohv","kuis":"1foa7t16z1j","eval":"228zyk72knc","p1":"20f5tyjhv9f","p2":"gv73o3vm9e","p3":"12ou40fr54m"}};
+let UNLOCK={}, MARKS=[];
+function loadUnlock(){try{UNLOCK=JSON.parse(localStorage.getItem("anekdot_unlock_"+userSlug())||"{}");}catch(e){UNLOCK={};}}
+function saveUnlock(){try{localStorage.setItem("anekdot_unlock_"+userSlug(),JSON.stringify(UNLOCK));}catch(e){}}
+function loadMarks(){try{MARKS=JSON.parse(localStorage.getItem("anekdot_mark_"+userSlug())||"[]");}catch(e){MARKS=[];}}
+function saveMarks(){try{localStorage.setItem("anekdot_mark_"+userSlug(),JSON.stringify(MARKS));}catch(e){}}
+function codeOk(jenis,val){
+  const t=CODE_H[USER.kelas];if(!t)return false;
+  return H(USER.kelas,jenis,String(val).trim().toLowerCase())===t[jenis];
+}
+function isOpen(p){
+  if(p==="ringkasan")return MARKS.length>=MATERI.length;
+  if(p==="kuis"||p==="latihan")return !!UNLOCK.kuis;
+  if(p==="evaluasi")return !!UNLOCK.eval;
+  return true;
+}
+function refreshNav(){
+  document.querySelectorAll("nav.mainnav button").forEach(b=>{
+    if(isOpen(b.dataset.page))b.removeAttribute("data-locked");else b.setAttribute("data-locked","1");
   });
+}
+function openCodeModal(title,desc,jenis,onOk){
+  const ov=document.createElement("div");
+  ov.style.cssText="position:fixed;inset:0;background:rgba(11,37,69,.7);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;";
+  ov.innerHTML=`<div style="background:#fff;border-radius:14px;max-width:360px;width:100%;padding:24px 20px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.4);border-top:6px solid var(--yellow);">
+    <h3 style="margin-top:0;">🔑 ${title}</h3>
+    <p style="font-size:.85rem;color:var(--muted);">${desc}</p>
+    <input type="text" id="codeInp" placeholder="Masukkan kode dari guru" autocomplete="off" autocapitalize="none">
+    <div id="codeErr" style="color:var(--red);font-size:.8rem;font-weight:600;min-height:1.2em;margin-top:8px;"></div>
+    <div class="btnRow" style="justify-content:center;"><button class="btnGhost" id="codeCancel">Batal</button><button class="btnPrimary" id="codeOk">Buka</button></div></div>`;
+  document.body.appendChild(ov);
+  const inp=document.getElementById("codeInp");
+  function cek(){
+    if(codeOk(jenis,inp.value)){UNLOCK[jenis]=true;saveUnlock();refreshNav();ov.remove();showProtectToast("✅ Kode benar, menu terbuka.");if(onOk)onOk();}
+    else document.getElementById("codeErr").textContent="Kode salah. Tanyakan kode yang benar kepada guru mapel.";
+  }
+  document.getElementById("codeOk").addEventListener("click",cek);
+  inp.addEventListener("keydown",e=>{if(e.key==="Enter")cek();});
+  document.getElementById("codeCancel").addEventListener("click",()=>ov.remove());
   setTimeout(()=>inp.focus(),100);
 }
 const fNama=document.getElementById("fNama");
@@ -697,7 +713,7 @@ document.getElementById("loginForm").addEventListener("submit",e=>{
   const pass=document.getElementById("fPass").value;
   const err=document.getElementById("loginErr");
   if(!nama||!kelas){err.textContent="Lengkapi nama dan kelas terlebih dahulu.";return;}
-  if(pass!==PASS_KELAS[kelas]){err.textContent="Password salah untuk kelas "+kelas+". Silakan coba lagi.";return;}
+  if(!CODE_H[kelas]||H(kelas,"login",pass.trim())!==CODE_H[kelas].login){err.textContent="Password salah untuk kelas "+kelas+". Silakan coba lagi.";return;}
   err.textContent="";
   USER={nama,kelas};saveState();
   const usedCount=useAccessQuota();
@@ -717,7 +733,7 @@ function enterApp(){
   if(typeof updateEvalIntro==="function"){updateEvalIntro();renderEval();}
   setTimeout(()=>showProtectToast("🔒 Konten ini dilindungi. Dilarang menyalin, memfoto, atau mengambil tangkapan layar tanpa izin guru mapel."),600);
   goPage("beranda");
-  openMenuCodeModal();
+  loadUnlock();loadMarks();refreshNav();renderProyek();showMateri(0);
 }
 document.getElementById("logoutBtn").addEventListener("click",()=>{
   openLogoutModal();
@@ -792,7 +808,15 @@ window.addEventListener("focus",()=>{document.getElementById("privacyBlur").styl
 
 /* ================= NAV ================= */
 document.querySelectorAll("nav.mainnav button").forEach(b=>{
-  b.addEventListener("click",()=>{goPage(b.dataset.page);document.getElementById("mainnav").classList.remove("open");});
+  b.addEventListener("click",()=>{
+    const p=b.dataset.page;
+    document.getElementById("mainnav").classList.remove("open");
+    if(isOpen(p)){goPage(p);return;}
+    if(p==="ringkasan"){showProtectToast("📖 Tandai ke-"+MATERI.length+" subtopik Materi sebagai 'sudah dipelajari' untuk membuka Ringkasan.");goPage("materi");return;}
+    const jenis=p==="evaluasi"?"eval":"kuis";
+    const judul=p==="evaluasi"?"Buka Evaluasi":"Buka Kuis & Latihan";
+    openCodeModal(judul,"Menu ini terkunci. Masukkan kode yang diberikan guru mapel untuk membukanya.",jenis,()=>goPage(p));
+  });
 });
 document.getElementById("menuToggle").addEventListener("click",()=>{
   document.getElementById("mainnav").classList.toggle("open");
@@ -810,10 +834,19 @@ document.getElementById("tpListEl").innerHTML=TP.map((t,i)=>`<li><span class="tp
 /* ================= RENDER: MATERI ================= */
 const subtabsEl=document.getElementById("subtabsEl");
 const matContent=document.getElementById("matContent");
-subtabsEl.innerHTML=MATERI.map((m,i)=>`<button data-i="${i}" class="${i===0?'active':''}"><span class="n">${i+1}.</span>${m.t}</button>`).join("");
 function showMateri(i){
-  matContent.innerHTML=`<h3>${i+1}. ${MATERI[i].t}</h3>${MATERI[i].html}`;
-  subtabsEl.querySelectorAll("button").forEach(b=>b.classList.toggle("active",+b.dataset.i===i));
+  const done=MARKS.includes(i);
+  matContent.innerHTML=`<h3>${i+1}. ${MATERI[i].t}</h3>${MATERI[i].html}
+   <div class="markBar"><button class="btnPrimary" id="markBtn" ${done?"disabled":""} style="${done?"background:var(--green);":""}">${done?"✓ Sudah dipelajari":"Tandai sudah dipelajari"}</button>
+   <span style="font-size:.78rem;color:var(--muted);margin-left:8px;">Ditandai: ${MARKS.length}/${MATERI.length} subtopik</span></div>`;
+  subtabsEl.innerHTML=MATERI.map((m,k)=>`<button data-i="${k}" class="${k===i?'active':''}"><span class="n">${MARKS.includes(k)?'✓':(k+1)+'.'}</span>${m.t}</button>`).join("");
+  const mb=document.getElementById("markBtn");
+  if(mb&&!done)mb.addEventListener("click",()=>{
+    if(!MARKS.includes(i))MARKS.push(i);
+    saveMarks();refreshNav();
+    if(MARKS.length>=MATERI.length){showProtectToast("🎉 Semua materi sudah dipelajari. Menu Ringkasan terbuka!");showMateri(i);}
+    else showMateri(i<MATERI.length-1?i+1:i);
+  });
 }
 subtabsEl.addEventListener("click",e=>{const b=e.target.closest("button");if(b)showMateri(+b.dataset.i);});
 showMateri(0);
@@ -822,7 +855,8 @@ showMateri(0);
 document.getElementById("ringkasanContent").innerHTML=RINGKASAN_HTML;
 
 /* ================= RENDER: PROYEK ================= */
-document.getElementById("proyekContent").innerHTML=PROYEK.map(p=>`
+function renderProyek(){
+  document.getElementById("proyekContent").innerHTML=PROYEK.map((p,i)=>UNLOCK["p"+(i+1)]?`
  <div class="card proyekCard">
    <h3>${p.judul}</h3>
    <div class="proyekMeta">${p.tag.map(t=>`<span class="tag">${t}</span>`).join("")}</div>
@@ -831,7 +865,22 @@ document.getElementById("proyekContent").innerHTML=PROYEK.map(p=>`
    <ol style="font-size:.85rem;">${p.langkah.map(l=>`<li>${l}</li>`).join("")}</ol>
    <h4 style="font-size:.85rem;color:var(--navy);margin-bottom:6px;">Kriteria Penilaian:</h4>
    <ul style="font-size:.85rem;">${p.rubrik.map(r=>`<li>${r}</li>`).join("")}</ul>
+ </div>`:`
+ <div class="card lockCard">
+   <h3>🔒 Proyek ${i+1} (terkunci)</h3>
+   <p style="font-size:.85rem;color:var(--muted);">Masukkan kode proyek dari guru untuk membuka tugas ini.</p>
+   <input type="text" id="pcode${i+1}" placeholder="Kode Proyek ${i+1}" autocomplete="off" autocapitalize="none">
+   <div class="btnRow"><button class="btnPrimary pUnlock" data-n="${i+1}">Buka Proyek ${i+1}</button></div>
+   <div id="perr${i+1}" style="color:var(--red);font-size:.8rem;font-weight:600;margin-top:6px;"></div>
  </div>`).join("");
+}
+document.getElementById("proyekContent").addEventListener("click",e=>{
+  const b=e.target.closest(".pUnlock");if(!b)return;
+  const n=b.dataset.n;
+  if(codeOk("p"+n,document.getElementById("pcode"+n).value)){UNLOCK["p"+n]=true;saveUnlock();renderProyek();}
+  else document.getElementById("perr"+n).textContent="Kode salah. Tanyakan kepada guru mapel.";
+});
+renderProyek();
 
 /* ================= KUIS LOGIC (berjenjang, level berikutnya terkunci) ================= */
 const KUIS_PASS=3; // skor minimal dari 5 untuk dianggap tuntas & membuka level berikutnya
