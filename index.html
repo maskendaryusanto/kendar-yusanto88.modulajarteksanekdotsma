@@ -266,7 +266,6 @@ nav.mainnav button[data-locked="1"]{display:none !important;}
     <button data-page="latihan">✏️ Latihan Soal</button>
     <button data-page="evaluasi">🧾 Evaluasi</button>
     <button data-page="rekap">📊 Rekap Nilai Siswa</button>
-    <button data-page="kode">🔑 Masukkan Kode</button>
   </nav>
 
   <main>
@@ -325,6 +324,7 @@ nav.mainnav button[data-locked="1"]{display:none !important;}
       <div class="pageHead"><div class="eyebrow">UJI PEMAHAMAN</div><h2>Kuis Bertingkat (5 Level)</h2></div>
       <div class="card" id="kuisHome"></div>
       <div id="kuisRunner"></div>
+      <div id="kuisVerif"></div>
     </section>
 
     <!-- LATIHAN -->
@@ -342,6 +342,7 @@ nav.mainnav button[data-locked="1"]{display:none !important;}
       </div>
       <div class="card" id="evalContent"></div>
       <div id="evalResult"></div>
+      <div id="evalVerif"></div>
     </section>
 
     <!-- REKAP -->
@@ -670,15 +671,16 @@ function codeOk(jenis,val){
   return H(USER.kelas,jenis,String(val).trim().toLowerCase())===t[jenis];
 }
 function isOpen(p){
-  if(p==="ringkasan")return MARKS.length>=MATERI.length;
-  if(p==="kuis"||p==="latihan")return !!UNLOCK.kuis;
-  if(p==="evaluasi")return !!UNLOCK.eval;
+  if(p==="ringkasan"||p==="proyek")return MARKS.length>=MATERI.length;
+  if(p==="kuis"||p==="latihan")return !!(UNLOCK.p1&&UNLOCK.p2&&UNLOCK.p3);
+  if(p==="evaluasi")return !!UNLOCK.kuis;
   return true;
 }
 function refreshNav(){
+  if(typeof renderVerif==="function")renderVerif();
   document.querySelectorAll("nav.mainnav button").forEach(b=>{
     const pg=b.dataset.page;
-    const visible=pg==="kode"?!(UNLOCK.kuis&&UNLOCK.eval):isOpen(pg);
+    const visible=pg==="kode"?false:isOpen(pg);
     if(visible)b.removeAttribute("data-locked");else b.setAttribute("data-locked","1");
   });
 }
@@ -883,8 +885,9 @@ document.getElementById("ringkasanContent").innerHTML=RINGKASAN_HTML;
 
 /* ================= RENDER: PROYEK ================= */
 function renderProyek(){
-  document.getElementById("proyekContent").innerHTML=PROYEK.map((p,i)=>UNLOCK["p"+(i+1)]?`
- <div class="card proyekCard">
+  document.getElementById("proyekContent").innerHTML=`<div class="card"><p style="font-size:.85rem;margin:0;">Kerjakan setiap proyek terlebih dahulu. Setelah selesai, tunjukkan hasilnya kepada guru mapel untuk <b>diverifikasi</b> dengan kode dari guru. Setelah ketiga proyek terverifikasi, menu Kuis dan Latihan akan terbuka.</p></div>`+PROYEK.map((p,i)=>{
+    const n=i+1,done=!!UNLOCK["p"+n];
+    return `<div class="card proyekCard">
    <h3>${p.judul}</h3>
    <div class="proyekMeta">${p.tag.map(t=>`<span class="tag">${t}</span>`).join("")}</div>
    <p>${p.desc}</p>
@@ -892,22 +895,53 @@ function renderProyek(){
    <ol style="font-size:.85rem;">${p.langkah.map(l=>`<li>${l}</li>`).join("")}</ol>
    <h4 style="font-size:.85rem;color:var(--navy);margin-bottom:6px;">Kriteria Penilaian:</h4>
    <ul style="font-size:.85rem;">${p.rubrik.map(r=>`<li>${r}</li>`).join("")}</ul>
- </div>`:`
- <div class="card lockCard">
-   <h3>🔒 Proyek ${i+1} (terkunci)</h3>
-   <p style="font-size:.85rem;color:var(--muted);">Masukkan kode proyek dari guru untuk membuka tugas ini.</p>
-   <input type="text" id="pcode${i+1}" placeholder="Kode Proyek ${i+1}" autocomplete="off" autocapitalize="none">
-   <div class="btnRow"><button class="btnPrimary pUnlock" data-n="${i+1}">Buka Proyek ${i+1}</button></div>
-   <div id="perr${i+1}" style="color:var(--red);font-size:.8rem;font-weight:600;margin-top:6px;"></div>
- </div>`).join("");
+   <div class="markBar">${done?`<span class="badgeYellow" style="background:var(--green);color:#fff;margin:0;">✓ Sudah diverifikasi guru</span>`:`
+     <p style="font-size:.82rem;color:var(--muted);margin:0 0 6px;">Sudah selesai? Minta verifikasi guru, lalu masukkan kodenya:</p>
+     <input type="text" id="pcode${n}" placeholder="Kode verifikasi Proyek ${n}" autocomplete="off" autocapitalize="none">
+     <div class="btnRow"><button class="btnPrimary pUnlock" data-n="${n}">Verifikasi Proyek ${n}</button></div>
+     <div id="perr${n}" style="color:var(--red);font-size:.8rem;font-weight:600;margin-top:6px;"></div>`}</div>
+ </div>`;}).join("");
 }
 document.getElementById("proyekContent").addEventListener("click",e=>{
   const b=e.target.closest(".pUnlock");if(!b)return;
   const n=b.dataset.n;
-  if(codeOk("p"+n,document.getElementById("pcode"+n).value)){UNLOCK["p"+n]=true;saveUnlock();renderProyek();}
-  else document.getElementById("perr"+n).textContent="Kode salah. Tanyakan kepada guru mapel.";
+  if(codeOk("p"+n,document.getElementById("pcode"+n).value)){
+    UNLOCK["p"+n]=true;saveUnlock();renderProyek();refreshNav();
+    if(UNLOCK.p1&&UNLOCK.p2&&UNLOCK.p3)showProtectToast("🎉 Semua proyek terverifikasi. Menu Kuis & Latihan terbuka!");
+    else showProtectToast("✅ Proyek "+n+" terverifikasi guru.");
+  }else document.getElementById("perr"+n).textContent="Kode salah. Tanyakan kepada guru mapel.";
 });
 renderProyek();
+
+/* ===== verifikasi guru untuk Kuis & Evaluasi ===== */
+function verifCard(j,ok,pending,label,btn){
+  if(ok)return `<div class="card"><span class="badgeYellow" style="background:var(--green);color:#fff;margin:0;">✓ ${label} sudah diverifikasi guru</span></div>`;
+  if(pending)return `<div class="card lockCard"><h3>Verifikasi Guru</h3><p style="font-size:.85rem;color:var(--muted);margin:0;">${pending}</p></div>`;
+  return `<div class="card lockCard"><h3>Verifikasi Guru</h3>
+    <p style="font-size:.85rem;color:var(--muted);">Setelah selesai, tunjukkan hasilmu kepada guru mapel, lalu masukkan kode verifikasi dari guru.</p>
+    <input type="text" id="vcode_${j}" placeholder="Kode verifikasi dari guru" autocomplete="off" autocapitalize="none">
+    <div class="btnRow"><button class="btnPrimary verifBtn" data-j="${j}">${btn}</button></div>
+    <div id="verr_${j}" style="color:var(--red);font-size:.8rem;font-weight:600;margin-top:6px;"></div></div>`;
+}
+function renderVerif(){
+  const kv=document.getElementById("kuisVerif"),ev=document.getElementById("evalVerif");
+  if(!kv||!ev||!USER.nama)return;
+  const kuisDone=[0,1,2,3,4].every(i=>kuisScores[i]!==undefined&&kuisScores[i]>=KUIS_PASS);
+  kv.innerHTML=verifCard("kuis",!!UNLOCK.kuis,kuisDone?"":"Selesaikan semua 5 level kuis sampai tuntas, lalu kamu bisa meminta verifikasi guru untuk membuka Evaluasi.","Kuis","Verifikasi Kuis");
+  ev.innerHTML=verifCard("eval",!!UNLOCK.eval,getEvalAttempts()>=1?"":"Kerjakan Evaluasi terlebih dahulu, lalu tunjukkan nilainya kepada guru untuk diverifikasi.","Nilai Evaluasi","Verifikasi Evaluasi");
+}
+document.addEventListener("click",e=>{
+  const b=e.target.closest(".verifBtn");if(!b)return;
+  const j=b.dataset.j;
+  if(codeOk(j,document.getElementById("vcode_"+j).value)){
+    UNLOCK[j]=true;saveUnlock();refreshNav();
+    showProtectToast(j==="kuis"?"✅ Kuis terverifikasi. Menu Evaluasi terbuka!":"✅ Nilai evaluasi terverifikasi guru.");
+  }else document.getElementById("verr_"+j).textContent="Kode salah. Tanyakan kepada guru mapel.";
+});
+["kuisHome","kuisRunner","evalResult","evalContent"].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el)new MutationObserver(()=>renderVerif()).observe(el,{childList:true});
+});
 
 /* ================= KUIS LOGIC (berjenjang, level berikutnya terkunci) ================= */
 const KUIS_PASS=3; // skor minimal dari 5 untuk dianggap tuntas & membuka level berikutnya
